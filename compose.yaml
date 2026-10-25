@@ -1,0 +1,29 @@
+name: ctx-server
+services:
+  api:
+    image: ctx-server:0.1.0
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: ${CTX_ENV_FILE:-.env}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 40s
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/api/v1/health/ready',headers={'Host':__import__('os').environ['TRUSTED_HOSTS'].split(',')[0],'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r,timeout=8)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}

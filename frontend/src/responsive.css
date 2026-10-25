@@ -1,0 +1,60 @@
+@media (max-width: 720px) {
+  .sidebar {
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 4px 12px;
+  }
+  .sidebar nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+  .sidebar .brand {
+    flex: 1 1 160px;
+    min-width: 160px;
+    gap: 8px;
+    font-size: 15px;
+  }
+  .sidebar .brand-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .sidebar nav a {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 6px;
+  }
+  .sidebar .account-link {
+    display: flex;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    gap: 5px;
+  }
+  .sidebar .account-link a {
+    max-width: 120px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 380px) {
+  .sidebar nav {
+    gap: 0;
+  }
+  .sidebar nav a {
+    padding-inline: 4px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 720px) {
+  .profile-dialog .el-dialog__body {
+    max-height: 72vh;
+  }
+  .profile-editor-grid,
+  .profile-rule-grid {
+    grid-template-columns: 1fr;
+  }
+  .profile-resource-row {
+    align-items: stretch;
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "profile": {
+    "name": "示例班级",
+    "semesterStartDate": "2026-09-01",
+    "subjects": [
+      { "name": "语文", "simplifiedName": "语", "teacher": "" },
+      { "name": "数学", "simplifiedName": "数", "teacher": "" }
+    ],
+    "timeLines": [],
+    "schedules": [{
+      "id": "example-week",
+      "name": "常规周",
+      "mode": "all",
+      "daySchedules": [{
+        "name": "星期一",
+        "enableDay": 1,
+        "classes": [
+          { "subject": "语文", "startTime": "08:00:00", "endTime": "08:45:00" },
+          { "subject": "数学", "startTime": "09:00:00", "endTime": "09:45:00" }
+        ]
+      }]
+    }],
+    "activeWeekScheduleId": "",
+    "dateOverrides": [],
+    "reminderRules": []
+  }
+}

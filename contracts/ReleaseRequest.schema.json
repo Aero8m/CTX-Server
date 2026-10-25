@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "ResourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-f0-9]{32}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "revision"
+      ],
+      "title": "ResourceRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "resources": {
+      "items": {
+        "$ref": "#/$defs/ResourceRef"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Resources",
+      "type": "array"
+    },
+    "device_ids": {
+      "items": {
+        "pattern": "^[a-f0-9]{32}$",
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "title": "Device Ids",
+      "type": "array"
+    },
+    "group_ids": {
+      "items": {
+        "pattern": "^[a-f0-9]{32}$",
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "title": "Group Ids",
+      "type": "array"
+    },
+    "note": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Note",
+      "type": "string"
+    }
+  },
+  "required": [
+    "resources"
+  ],
+  "title": "ReleaseRequest",
+  "type": "object"
+}

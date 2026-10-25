@@ -1,0 +1,225 @@
+{
+  "$defs": {
+    "Appearance": {
+      "additionalProperties": false,
+      "properties": {
+        "themeColor": {
+          "default": "#1191d3",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Themecolor",
+          "type": "string"
+        },
+        "themeMode": {
+          "default": "system",
+          "enum": [
+            "system",
+            "light",
+            "dark"
+          ],
+          "title": "Thememode",
+          "type": "string"
+        },
+        "windowEffect": {
+          "default": "mica",
+          "enum": [
+            "normal",
+            "elaMica",
+            "mica",
+            "micaAlt",
+            "acrylic",
+            "dwmBlur"
+          ],
+          "title": "Windoweffect",
+          "type": "string"
+        }
+      },
+      "title": "Appearance",
+      "type": "object"
+    },
+    "Component": {
+      "additionalProperties": false,
+      "properties": {
+        "typeId": {
+          "enum": [
+            "builtin/date",
+            "builtin/courseView",
+            "builtin/countdown",
+            "builtin/textTip"
+          ],
+          "title": "Typeid",
+          "type": "string"
+        },
+        "instanceId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Instanceid",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 1000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "courseSpacing": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coursespacing"
+        }
+      },
+      "required": [
+        "typeId",
+        "instanceId"
+      ],
+      "title": "Component",
+      "type": "object"
+    },
+    "Countdown": {
+      "additionalProperties": false,
+      "properties": {
+        "enable": {
+          "default": false,
+          "title": "Enable",
+          "type": "boolean"
+        },
+        "targetDateTime": {
+          "default": "",
+          "maxLength": 19,
+          "title": "Targetdatetime",
+          "type": "string"
+        },
+        "labelTag": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Labeltag",
+          "type": "string"
+        },
+        "englishTag": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Englishtag",
+          "type": "string"
+        },
+        "showMilliseconds": {
+          "default": true,
+          "title": "Showmilliseconds",
+          "type": "boolean"
+        },
+        "useLegacyPlacement": {
+          "default": true,
+          "title": "Uselegacyplacement",
+          "type": "boolean"
+        },
+        "rightMargin": {
+          "default": 24,
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Rightmargin",
+          "type": "integer"
+        },
+        "bottomMargin": {
+          "default": 24,
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Bottommargin",
+          "type": "integer"
+        },
+        "scalePercent": {
+          "default": 100,
+          "maximum": 200,
+          "minimum": 50,
+          "title": "Scalepercent",
+          "type": "integer"
+        }
+      },
+      "title": "Countdown",
+      "type": "object"
+    },
+    "CourseBar": {
+      "additionalProperties": false,
+      "properties": {
+        "enable": {
+          "default": true,
+          "title": "Enable",
+          "type": "boolean"
+        },
+        "height": {
+          "default": 49,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "componentSpacing": {
+          "default": 14,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Componentspacing",
+          "type": "integer"
+        },
+        "components": {
+          "items": {
+            "$ref": "#/$defs/Component"
+          },
+          "maxItems": 32,
+          "title": "Components",
+          "type": "array"
+        }
+      },
+      "required": [
+        "components"
+      ],
+      "title": "CourseBar",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "courseBarConfig": {
+      "$ref": "#/$defs/CourseBar"
+    },
+    "appearanceConfig": {
+      "$ref": "#/$defs/Appearance"
+    },
+    "desktopCountdownConfig": {
+      "$ref": "#/$defs/Countdown"
+    }
+  },
+  "required": [
+    "courseBarConfig"
+  ],
+  "title": "DisplayConfig",
+  "type": "object"
+}

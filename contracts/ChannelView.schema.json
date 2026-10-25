@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "enum": [
+        "profile",
+        "display_config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "generation": {
+      "title": "Generation",
+      "type": "integer"
+    },
+    "assignment_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Assignment Id"
+    },
+    "target_version_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Target Version Id"
+    },
+    "applied_version_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Applied Version Id"
+    },
+    "applied_generation": {
+      "title": "Applied Generation",
+      "type": "integer"
+    },
+    "attempt": {
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "applied",
+        "failed",
+        "blocked"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "generation",
+    "assignment_id",
+    "target_version_id",
+    "applied_version_id",
+    "applied_generation",
+    "attempt",
+    "status",
+    "reason"
+  ],
+  "title": "ChannelView",
+  "type": "object"
+}

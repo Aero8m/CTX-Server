@@ -1,0 +1,63 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "assignment_id": {
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "profile",
+        "display_config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "generation": {
+      "title": "Generation",
+      "type": "integer"
+    },
+    "version_id": {
+      "title": "Version Id",
+      "type": "string"
+    },
+    "attempt": {
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "result": {
+      "enum": [
+        "applied",
+        "failed",
+        "blocked"
+      ],
+      "title": "Result",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "assignment_id",
+    "kind",
+    "generation",
+    "version_id",
+    "attempt",
+    "result",
+    "reason",
+    "created_at"
+  ],
+  "title": "ReceiptView",
+  "type": "object"
+}

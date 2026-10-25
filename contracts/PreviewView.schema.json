@@ -1,0 +1,80 @@
+{
+  "$defs": {
+    "PreviewDevice": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "PreviewDevice",
+      "type": "object"
+    },
+    "PreviewVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "profile",
+            "display_config"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "sha256",
+        "content"
+      ],
+      "title": "PreviewVersion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "preview_token": {
+      "title": "Preview Token",
+      "type": "string"
+    },
+    "devices": {
+      "items": {
+        "$ref": "#/$defs/PreviewDevice"
+      },
+      "title": "Devices",
+      "type": "array"
+    },
+    "versions": {
+      "items": {
+        "$ref": "#/$defs/PreviewVersion"
+      },
+      "title": "Versions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "preview_token",
+    "devices",
+    "versions"
+  ],
+  "title": "PreviewView",
+  "type": "object"
+}

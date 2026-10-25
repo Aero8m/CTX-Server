@@ -1,0 +1,45 @@
+name: Verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4@sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69
+        env:
+          MYSQL_ROOT_PASSWORD: test-only-password
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: ctx_test
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptest-only-password"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      TEST_DATABASE_URL: mysql+pymysql://root:test-only-password@127.0.0.1:3306/ctx_test?charset=utf8mb4
+      TEST_MIGRATION_DATABASE_URL: mysql+pymysql://root:test-only-password@127.0.0.1:3306/ctx_migration_test?charset=utf8mb4
+      E2E_DATABASE_URL: mysql+pymysql://root:test-only-password@127.0.0.1:3306/ctx_e2e_test?charset=utf8mb4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm, cache-dependency-path: frontend/package-lock.json}
+      - run: |
+          python -m venv .venv
+          .venv/bin/pip install -r backend/requirements-dev.lock
+          .venv/bin/pip install --no-deps --no-build-isolation -e backend
+          .venv/bin/python -c "import pymysql; c=pymysql.connect(host='127.0.0.1',user='root',password='test-only-password'); c.cursor().execute('CREATE DATABASE ctx_migration_test'); c.cursor().execute('CREATE DATABASE ctx_e2e_test'); c.close()"
+      - run: .venv/bin/ruff check backend --config backend/pyproject.toml
+      - run: .venv/bin/python -m pytest backend/tests -q
+      - run: |
+          cd backend
+          ../.venv/bin/python -m flask --app ctx_server:create_app export-contracts --output ../contracts
+          cd ../frontend
+          npm ci
+          npm run contracts
+          npm test
+          npm run build
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+          git diff --exit-code -- ../contracts src/wire.ts
+      - run: docker build -f backend/Dockerfile -t ctx-server:ci .

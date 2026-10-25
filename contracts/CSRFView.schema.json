@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "csrf_token": {
+      "title": "Csrf Token",
+      "type": "string"
+    },
+    "authenticated": {
+      "title": "Authenticated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "csrf_token",
+    "authenticated"
+  ],
+  "title": "CSRFView",
+  "type": "object"
+}

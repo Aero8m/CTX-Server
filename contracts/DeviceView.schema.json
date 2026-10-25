@@ -1,0 +1,243 @@
+{
+  "$defs": {
+    "ChannelView": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "profile",
+            "display_config"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "generation": {
+          "title": "Generation",
+          "type": "integer"
+        },
+        "assignment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assignment Id"
+        },
+        "target_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Version Id"
+        },
+        "applied_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Applied Version Id"
+        },
+        "applied_generation": {
+          "title": "Applied Generation",
+          "type": "integer"
+        },
+        "attempt": {
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "applied",
+            "failed",
+            "blocked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "generation",
+        "assignment_id",
+        "target_version_id",
+        "applied_version_id",
+        "applied_generation",
+        "attempt",
+        "status",
+        "reason"
+      ],
+      "title": "ChannelView",
+      "type": "object"
+    },
+    "ReceiptView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "assignment_id": {
+          "title": "Assignment Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "profile",
+            "display_config"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "generation": {
+          "title": "Generation",
+          "type": "integer"
+        },
+        "version_id": {
+          "title": "Version Id",
+          "type": "string"
+        },
+        "attempt": {
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "result": {
+          "enum": [
+            "applied",
+            "failed",
+            "blocked"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "assignment_id",
+        "kind",
+        "generation",
+        "version_id",
+        "attempt",
+        "result",
+        "reason",
+        "created_at"
+      ],
+      "title": "ReceiptView",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "group_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Group Id"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "revoked_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Revoked At"
+    },
+    "last_seen_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Last Seen At"
+    },
+    "client_version": {
+      "title": "Client Version",
+      "type": "string"
+    },
+    "online": {
+      "title": "Online",
+      "type": "boolean"
+    },
+    "channels": {
+      "items": {
+        "$ref": "#/$defs/ChannelView"
+      },
+      "title": "Channels",
+      "type": "array"
+    },
+    "receipts": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/ReceiptView"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Receipts"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "group_id",
+    "created_at",
+    "revoked_at",
+    "last_seen_at",
+    "client_version",
+    "online",
+    "channels"
+  ],
+  "title": "DeviceView",
+  "type": "object"
+}

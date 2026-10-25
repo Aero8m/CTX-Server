@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "receipt_id": {
+      "title": "Receipt Id",
+      "type": "string"
+    },
+    "duplicate": {
+      "title": "Duplicate",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "receipt_id",
+    "duplicate"
+  ],
+  "title": "ReceiptSavedView",
+  "type": "object"
+}

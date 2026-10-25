@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "title": "Device Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "device_id",
+    "name"
+  ],
+  "title": "PairResult",
+  "type": "object"
+}

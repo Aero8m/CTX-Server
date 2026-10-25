@@ -1,0 +1,402 @@
+{
+  "$defs": {
+    "Course": {
+      "additionalProperties": false,
+      "properties": {
+        "startTime": {
+          "title": "Starttime",
+          "type": "string"
+        },
+        "endTime": {
+          "title": "Endtime",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "startTime",
+        "endTime",
+        "subject"
+      ],
+      "title": "Course",
+      "type": "object"
+    },
+    "DateOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "title": "Date",
+          "type": "string"
+        },
+        "sourceWeekScheduleId": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Sourceweekscheduleid",
+          "type": "string"
+        },
+        "sourceWeekday": {
+          "maximum": 7,
+          "minimum": 1,
+          "title": "Sourceweekday",
+          "type": "integer"
+        },
+        "sourceClasses": {
+          "items": {
+            "$ref": "#/$defs/Course"
+          },
+          "maxItems": 1000,
+          "title": "Sourceclasses",
+          "type": "array"
+        },
+        "classes": {
+          "items": {
+            "$ref": "#/$defs/Course"
+          },
+          "maxItems": 1000,
+          "title": "Classes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "date",
+        "sourceWeekScheduleId",
+        "sourceWeekday",
+        "sourceClasses",
+        "classes"
+      ],
+      "title": "DateOverride",
+      "type": "object"
+    },
+    "DaySchedule": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "enableDay": {
+          "maximum": 7,
+          "minimum": 1,
+          "title": "Enableday",
+          "type": "integer"
+        },
+        "classes": {
+          "items": {
+            "$ref": "#/$defs/Course"
+          },
+          "maxItems": 1000,
+          "title": "Classes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "enableDay",
+        "classes"
+      ],
+      "title": "DaySchedule",
+      "type": "object"
+    },
+    "Profile": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "semesterStartDate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semesterstartdate"
+        },
+        "subjects": {
+          "items": {
+            "$ref": "#/$defs/Subject"
+          },
+          "maxItems": 1000,
+          "title": "Subjects",
+          "type": "array"
+        },
+        "timeLines": {
+          "items": {
+            "$ref": "#/$defs/TimeLine"
+          },
+          "maxItems": 100,
+          "title": "Timelines",
+          "type": "array"
+        },
+        "schedules": {
+          "items": {
+            "$ref": "#/$defs/WeekSchedule"
+          },
+          "maxItems": 100,
+          "title": "Schedules",
+          "type": "array"
+        },
+        "activeWeekScheduleId": {
+          "default": "",
+          "maxLength": 128,
+          "title": "Activeweekscheduleid",
+          "type": "string"
+        },
+        "dateOverrides": {
+          "items": {
+            "$ref": "#/$defs/DateOverride"
+          },
+          "maxItems": 1000,
+          "title": "Dateoverrides",
+          "type": "array"
+        },
+        "reminderRules": {
+          "items": {
+            "$ref": "#/$defs/ReminderRule"
+          },
+          "maxItems": 1000,
+          "title": "Reminderrules",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "subjects",
+        "timeLines",
+        "schedules"
+      ],
+      "title": "Profile",
+      "type": "object"
+    },
+    "ReminderRule": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "text": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "weekdays": {
+          "items": {
+            "maximum": 7,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Weekdays",
+          "type": "array"
+        },
+        "course": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Course",
+          "type": "integer"
+        },
+        "subject": {
+          "maxLength": 100,
+          "title": "Subject",
+          "type": "string"
+        },
+        "period": {
+          "maximum": 999,
+          "minimum": 1,
+          "title": "Period",
+          "type": "integer"
+        },
+        "timing": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Timing",
+          "type": "integer"
+        },
+        "time": {
+          "title": "Time",
+          "type": "string"
+        },
+        "offsetMinutes": {
+          "maximum": 1439,
+          "minimum": -1439,
+          "title": "Offsetminutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "text",
+        "weekdays",
+        "course",
+        "subject",
+        "period",
+        "timing",
+        "time",
+        "offsetMinutes"
+      ],
+      "title": "ReminderRule",
+      "type": "object"
+    },
+    "Subject": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "simplifiedName": {
+          "maxLength": 100,
+          "title": "Simplifiedname",
+          "type": "string"
+        },
+        "teacher": {
+          "maxLength": 100,
+          "title": "Teacher",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "simplifiedName",
+        "teacher"
+      ],
+      "title": "Subject",
+      "type": "object"
+    },
+    "TimeLine": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "timePoints": {
+          "items": {
+            "$ref": "#/$defs/TimeRange"
+          },
+          "maxItems": 1000,
+          "title": "Timepoints",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "timePoints"
+      ],
+      "title": "TimeLine",
+      "type": "object"
+    },
+    "TimeRange": {
+      "additionalProperties": false,
+      "properties": {
+        "startTime": {
+          "title": "Starttime",
+          "type": "string"
+        },
+        "endTime": {
+          "title": "Endtime",
+          "type": "string"
+        }
+      },
+      "required": [
+        "startTime",
+        "endTime"
+      ],
+      "title": "TimeRange",
+      "type": "object"
+    },
+    "WeekSchedule": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "all",
+            "odd",
+            "even"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "daySchedules": {
+          "items": {
+            "$ref": "#/$defs/DaySchedule"
+          },
+          "maxItems": 7,
+          "title": "Dayschedules",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "id",
+        "mode",
+        "daySchedules"
+      ],
+      "title": "WeekSchedule",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "profile": {
+      "$ref": "#/$defs/Profile"
+    }
+  },
+  "required": [
+    "version",
+    "profile"
+  ],
+  "title": "NativeProfile",
+  "type": "object"
+}

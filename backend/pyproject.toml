@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ctx-server"
+version = "0.1.0"
+description = "ClassTopLand Next device management service"
+requires-python = ">=3.13"
+dependencies = [
+  "Flask>=3.1,<3.2", "Flask-SQLAlchemy>=3.1,<3.2", "SQLAlchemy>=2.0,<2.1",
+  "Flask-Migrate>=4.1,<4.2", "PyMySQL>=1.1,<1.2", "cryptography>=46,<49",
+  "pydantic>=2.12,<3", "Pillow>=12,<13", "requests>=2.32,<3",
+  "gunicorn>=23,<24; sys_platform != 'win32'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4,<10", "pytest-cov>=7,<8", "ruff>=0.14,<1"]
+
+[project.scripts]
+ctx-device = "ctx_server.simulator:main"
+
+[tool.setuptools.packages.find]
+include = ["ctx_server*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["mysql: requires a dedicated MySQL database"]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

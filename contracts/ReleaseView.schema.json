@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "TargetView": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_id": {
+          "title": "Assignment Id",
+          "type": "string"
+        },
+        "device_id": {
+          "title": "Device Id",
+          "type": "string"
+        },
+        "device_name": {
+          "title": "Device Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "profile",
+            "display_config"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "generation": {
+          "title": "Generation",
+          "type": "integer"
+        },
+        "version_id": {
+          "title": "Version Id",
+          "type": "string"
+        },
+        "superseded": {
+          "title": "Superseded",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "applied",
+            "failed",
+            "blocked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assignment_id",
+        "device_id",
+        "device_name",
+        "kind",
+        "generation",
+        "version_id",
+        "superseded",
+        "status",
+        "reason"
+      ],
+      "title": "TargetView",
+      "type": "object"
+    },
+    "VersionView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "resource_id": {
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "profile",
+            "display_config"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "format_version": {
+          "title": "Format Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "resource_id",
+        "kind",
+        "sha256",
+        "format_version"
+      ],
+      "title": "VersionView",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "note": {
+      "title": "Note",
+      "type": "string"
+    },
+    "rollback_of": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Rollback Of"
+    },
+    "versions": {
+      "items": {
+        "$ref": "#/$defs/VersionView"
+      },
+      "title": "Versions",
+      "type": "array"
+    },
+    "target_count": {
+      "title": "Target Count",
+      "type": "integer"
+    },
+    "targets": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/TargetView"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Targets"
+    }
+  },
+  "required": [
+    "id",
+    "created_at",
+    "note",
+    "rollback_of",
+    "versions",
+    "target_count"
+  ],
+  "title": "ReleaseView",
+  "type": "object"
+}

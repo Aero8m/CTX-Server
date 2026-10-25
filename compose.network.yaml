@@ -1,0 +1,12 @@
+# For Nginx and MySQL already running on a shared Docker network.
+services:
+  api:
+    ports: !reset []
+    extra_hosts: !reset []
+    networks:
+      shared:
+        aliases: [ctx-api]
+networks:
+  shared:
+    external: true
+    name: ${CTX_SHARED_NETWORK:-ctx-shared}

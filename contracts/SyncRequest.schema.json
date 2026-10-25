@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "LocalState": {
+      "additionalProperties": false,
+      "properties": {
+        "generation": {
+          "minimum": 0,
+          "title": "Generation",
+          "type": "integer"
+        },
+        "version_id": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version Id"
+        }
+      },
+      "required": [
+        "generation"
+      ],
+      "title": "LocalState",
+      "type": "object"
+    },
+    "SupportedFormats": {
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "items": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 10,
+          "title": "Profile",
+          "type": "array"
+        },
+        "display_config": {
+          "items": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 10,
+          "title": "Display Config",
+          "type": "array"
+        }
+      },
+      "title": "SupportedFormats",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "client_version": {
+      "default": "",
+      "maxLength": 100,
+      "title": "Client Version",
+      "type": "string"
+    },
+    "supported_formats": {
+      "$ref": "#/$defs/SupportedFormats"
+    },
+    "applied": {
+      "additionalProperties": {
+        "$ref": "#/$defs/LocalState"
+      },
+      "propertyNames": {
+        "enum": [
+          "profile",
+          "display_config"
+        ]
+      },
+      "title": "Applied",
+      "type": "object"
+    }
+  },
+  "title": "SyncRequest",
+  "type": "object"
+}

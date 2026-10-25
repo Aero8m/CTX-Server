@@ -1,0 +1,64 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "assignment_id": {
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "device_id": {
+      "title": "Device Id",
+      "type": "string"
+    },
+    "device_name": {
+      "title": "Device Name",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "profile",
+        "display_config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "generation": {
+      "title": "Generation",
+      "type": "integer"
+    },
+    "version_id": {
+      "title": "Version Id",
+      "type": "string"
+    },
+    "superseded": {
+      "title": "Superseded",
+      "type": "boolean"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "applied",
+        "failed",
+        "blocked"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "device_id",
+    "device_name",
+    "kind",
+    "generation",
+    "version_id",
+    "superseded",
+    "status",
+    "reason"
+  ],
+  "title": "TargetView",
+  "type": "object"
+}

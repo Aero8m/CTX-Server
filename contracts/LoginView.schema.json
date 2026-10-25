@@ -1,0 +1,44 @@
+{
+  "$defs": {
+    "AccountView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "username": {
+          "title": "Username",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "created_at"
+      ],
+      "title": "AccountView",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "account": {
+      "$ref": "#/$defs/AccountView"
+    },
+    "csrf_token": {
+      "title": "Csrf Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "account",
+    "csrf_token"
+  ],
+  "title": "LoginView",
+  "type": "object"
+}

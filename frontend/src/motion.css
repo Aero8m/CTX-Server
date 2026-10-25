@@ -1,0 +1,143 @@
+:root {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Route wrappers also support views with multiple root elements. */
+.page-enter-active {
+  transition: opacity 220ms ease;
+}
+.page-leave-active {
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+
+.page-content .page-header,
+.page-content .panel,
+.page-content .stat,
+.login-form,
+.login-art > * {
+  animation: content-arrive 320ms var(--motion-ease) backwards;
+}
+.page-content .panel {
+  animation-delay: 60ms;
+}
+.stats .stat:nth-child(2) {
+  animation-delay: 45ms;
+}
+.stats .stat:nth-child(3) {
+  animation-delay: 90ms;
+}
+.login-form {
+  animation-delay: 80ms;
+}
+.login-art > h1 {
+  animation-delay: 60ms;
+}
+.login-art > p {
+  animation-delay: 110ms;
+}
+.login-caption {
+  animation-delay: 150ms;
+}
+@keyframes content-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar nav a,
+.guide-quick-link,
+.guide-toc a,
+.el-button {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms var(--motion-ease);
+}
+.sidebar nav a .el-icon {
+  transition: transform 180ms var(--motion-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .sidebar nav a:hover .el-icon {
+    transform: translateX(2px);
+  }
+  .guide-quick-link:hover,
+  .el-button:not(.is-disabled, .is-loading, .is-text, .is-link):hover {
+    transform: translateY(-1px);
+  }
+}
+.el-button:not(.is-disabled, .is-loading):active {
+  transform: scale(0.98);
+}
+
+/* Stable instance IDs let Vue animate reordering without remounting inputs. */
+.component-list {
+  position: relative;
+}
+.component-list-move,
+.component-list-enter-active,
+.component-list-leave-active {
+  transition:
+    transform 240ms var(--motion-ease),
+    opacity 180ms ease;
+}
+.component-list-enter-from,
+.component-list-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.component-list-leave-active {
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Keep Element Plus dialog and drawer animations consistent with page motion. */
+:root {
+  --el-transition-duration: 0.24s;
+  --el-transition-duration-fast: 0.16s;
+}
+.dialog-fade-enter-active .el-overlay-dialog,
+.dialog-fade-leave-active .el-overlay-dialog {
+  animation: none;
+}
+.dialog-fade-enter-active .el-dialog {
+  animation: dialog-arrive 240ms var(--motion-ease);
+}
+.dialog-fade-leave-active .el-dialog {
+  animation: dialog-arrive 160ms ease reverse;
+}
+@keyframes dialog-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

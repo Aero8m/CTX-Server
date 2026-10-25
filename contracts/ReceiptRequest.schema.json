@@ -1,0 +1,60 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "assignment_id": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Assignment Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "profile",
+        "display_config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "generation": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Generation",
+      "type": "integer"
+    },
+    "version_id": {
+      "pattern": "^[a-f0-9]{32}$",
+      "title": "Version Id",
+      "type": "string"
+    },
+    "attempt": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "result": {
+      "enum": [
+        "applied",
+        "failed",
+        "blocked"
+      ],
+      "title": "Result",
+      "type": "string"
+    },
+    "reason": {
+      "default": "",
+      "maxLength": 1000,
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "kind",
+    "generation",
+    "version_id",
+    "attempt",
+    "result"
+  ],
+  "title": "ReceiptRequest",
+  "type": "object"
+}

@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "resource_id": {
+      "title": "Resource Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "profile",
+        "display_config"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "sha256": {
+      "title": "Sha256",
+      "type": "string"
+    },
+    "format_version": {
+      "title": "Format Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "resource_id",
+    "kind",
+    "sha256",
+    "format_version"
+  ],
+  "title": "VersionView",
+  "type": "object"
+}

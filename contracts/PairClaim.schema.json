@@ -1,0 +1,37 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "pattern": "^[A-Z2-9]{12}$",
+      "title": "Code",
+      "type": "string"
+    },
+    "claim_id": {
+      "maxLength": 64,
+      "minLength": 16,
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "device_secret": {
+      "maxLength": 128,
+      "minLength": 43,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "title": "Device Secret",
+      "type": "string"
+    },
+    "client_version": {
+      "default": "",
+      "maxLength": 100,
+      "title": "Client Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "code",
+    "claim_id",
+    "device_secret"
+  ],
+  "title": "PairClaim",
+  "type": "object"
+}

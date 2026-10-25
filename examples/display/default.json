@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "courseBarConfig": {
+    "enable": true,
+    "height": 49,
+    "componentSpacing": 14,
+    "components": [
+      { "typeId": "builtin/date", "instanceId": "date-main", "enabled": true, "settings": {} },
+      { "typeId": "builtin/courseView", "instanceId": "courses-main", "enabled": true, "settings": {}, "courseSpacing": 28 },
+      { "typeId": "builtin/countdown", "instanceId": "countdown-main", "enabled": true, "settings": {} }
+    ]
+  },
+  "appearanceConfig": { "themeColor": "#1191d3", "themeMode": "system", "windowEffect": "mica" },
+  "desktopCountdownConfig": {
+    "enable": false,
+    "targetDateTime": "",
+    "labelTag": "",
+    "englishTag": "",
+    "showMilliseconds": true,
+    "useLegacyPlacement": true,
+    "rightMargin": 24,
+    "bottomMargin": 24,
+    "scalePercent": 100
+  }
+}

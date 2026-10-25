@@ -1,0 +1,164 @@
+{
+  "$defs": {
+    "SyncTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "profile",
+            "display_config"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "generation": {
+          "title": "Generation",
+          "type": "integer"
+        },
+        "assignment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assignment Id"
+        },
+        "target_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target Version Id"
+        },
+        "applied_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Applied Version Id"
+        },
+        "applied_generation": {
+          "title": "Applied Generation",
+          "type": "integer"
+        },
+        "attempt": {
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "applied",
+            "failed",
+            "blocked"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "version_id": {
+          "title": "Version Id",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "format_version": {
+          "title": "Format Version",
+          "type": "integer"
+        },
+        "compatible": {
+          "title": "Compatible",
+          "type": "boolean"
+        },
+        "download_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Download Url"
+        }
+      },
+      "required": [
+        "kind",
+        "generation",
+        "assignment_id",
+        "target_version_id",
+        "applied_version_id",
+        "applied_generation",
+        "attempt",
+        "status",
+        "reason",
+        "version_id",
+        "sha256",
+        "format_version",
+        "compatible",
+        "download_url"
+      ],
+      "title": "SyncTarget",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "title": "Device Id",
+      "type": "string"
+    },
+    "server_time": {
+      "title": "Server Time",
+      "type": "string"
+    },
+    "sync_after_seconds": {
+      "title": "Sync After Seconds",
+      "type": "integer"
+    },
+    "channels": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/SyncTarget"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "propertyNames": {
+        "enum": [
+          "profile",
+          "display_config"
+        ]
+      },
+      "title": "Channels",
+      "type": "object"
+    }
+  },
+  "required": [
+    "device_id",
+    "server_time",
+    "sync_after_seconds",
+    "channels"
+  ],
+  "title": "SyncView",
+  "type": "object"
+}
