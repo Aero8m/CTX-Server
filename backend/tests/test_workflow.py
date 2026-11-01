@@ -181,3 +181,39 @@ def test_immutable_version_and_archive(app, owner):
         with pytest.raises(ValueError, match="immutable"):
             db.session.flush()
         db.session.rollback()
+
+
+def test_display_v2_publish_compatibility_and_exact_rollback(owner, client):
+    from conftest import DISPLAY
+    from copy import deepcopy
+
+    device_id, secret, _ = owner.pair()
+    content = deepcopy(DISPLAY) | {
+        "schema_version": 2,
+        "windowInterceptionConfig": {"rules": []},
+        "pluginConfig": {"plugins": {"org.example.clock": {"enabled": False}}},
+    }
+    resource = owner.resource("display_config", content)
+    release, _, _ = owner.release([resource], [device_id])
+    version = release["versions"][0]
+    assert version["format_version"] == 2
+    original = owner.get(f"/versions/{version['id']}/content").data
+    assert hashlib.sha256(original).hexdigest() == version["sha256"]
+    legacy = unpack(device_post(client, secret, "sync", {
+        "supported_formats": {"display_config": [1]},
+    }))["channels"]["display_config"]
+    assert not legacy["compatible"] and legacy["reason"] == "unsupported_format"
+    current = unpack(device_post(client, secret, "sync", {
+        "supported_formats": {"display_config": [1, 2]},
+    }))["channels"]["display_config"]
+    assert current["compatible"] and current["format_version"] == 2
+    assert device_post(client, secret, "receipts", make_receipt(current)).status_code == 200
+    path = f"/releases/{release['id']}/rollback"
+    body = {"device_ids": [device_id]}
+    preview = unpack(owner.post(path + "/preview", body))
+    rollback = unpack(owner.post(path, body, **{
+        "Idempotency-Key": "display-v2-rollback", "X-Preview-Token": preview["preview_token"],
+    }), 201)
+    restored = rollback["versions"][0]
+    assert restored["format_version"] == 2
+    assert owner.get(f"/versions/{restored['id']}/content").data == original

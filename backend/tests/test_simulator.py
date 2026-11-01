@@ -21,11 +21,16 @@ def test_simulator_block_save_failure_lost_receipt_and_restart(server, owner, tm
     code = unpack(owner.post("/pairing-codes", {"name": "模拟设备"}), 201)["code"]
     device = DeviceClient(server, tmp_path / "device")
     device_id = device.pair(code)["device_id"]
-    profile, display = owner.resource(), owner.resource("display_config")
+    from conftest import DISPLAY
+    profile, display = owner.resource(), owner.resource("display_config", DISPLAY | {
+        "schema_version": 2, "windowInterceptionConfig": {"rules": []},
+        "pluginConfig": {"plugins": {"org.example.clock": {"enabled": True}}},
+    })
     owner.release([profile, display], [device_id])
     device.tick(block=True)
     assert "profile" not in device.state["applied"]
     assert "display_config" in device.state["applied"]
+    assert b'"schema_version":2' in (tmp_path / "device" / "display_config.json").read_bytes()
     device.tick(fail_save=True)
     assert "profile" not in device.state["applied"]
     device.tick(drop_receipt=True)

@@ -1,140 +1,129 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
 import { all, get, patch, post, request } from '../api'
-import type { RequestOptions } from '../api'
 import { useRefresh } from '../useRefresh'
 import type { Device, Group, Page } from '../types'
 import { formatTime } from '../types'
 import ChannelStatus from '../components/ChannelStatus.vue'
-
+import PairingWizard from '../components/PairingWizard.vue'
+import LoadNotice from '../components/LoadNotice.vue'
+const route = useRoute(),
+  router = useRouter()
 const items = ref<Device[]>([]),
   groups = ref<Group[]>([]),
   total = ref(0),
   page = ref(1),
   q = ref(''),
-  groupId = ref('')
-const busy = ref(false),
-  pairing = ref(false),
+  groupId = ref(''),
+  showRevoked = ref(false)
+const pairing = ref(route.query.pair === '1'),
   manageGroups = ref(false),
   newGroupName = ref(''),
-  code = ref(''),
-  codeId = ref(''),
-  codeExpires = ref('')
-const form = reactive({ name: '', group_id: '' })
-const onlineCount = computed(() => items.value.filter((d) => d.online).length)
-async function load(options: RequestOptions = {}) {
-  const data = await get<Page<Device>>(
-    `/devices?page=${page.value}&q=${encodeURIComponent(q.value)}${groupId.value ? '&group_id=' + groupId.value : ''}`,
-    options,
-  )
+  groupBusy = ref(false),
+  groupError = ref('')
+const onlineCount = computed(() => items.value.filter((d) => d.online && !d.revoked_at).length)
+const refresh = useRefresh(async (options) => {
+  const [data, g] = await Promise.all([
+    get<Page<Device>>(
+      `/devices?page=${page.value}&q=${encodeURIComponent(q.value)}${groupId.value ? '&group_id=' + groupId.value : ''}${showRevoked.value ? '' : '&revoked=false'}`,
+      options,
+    ),
+    all<Group>('/groups', options),
+  ])
   items.value = data.items
   total.value = data.total
-  groups.value = await all<Group>('/groups', options)
-}
-const refresh = useRefresh(load)
-async function filterChanged() {
+  groups.value = g
+})
+const { error, loading, ready } = refresh
+watch(
+  () => route.query.pair,
+  (value) => {
+    if (value === '1') pairing.value = true
+  },
+)
+watch(pairing, (value) => {
+  if (!value && route.query.pair) void router.replace('/devices')
+})
+function filterChanged() {
   page.value = 1
-  await refresh()
-}
-async function closePairing() {
-  pairing.value = false
-  await refresh()
-}
-async function makeCode() {
-  if (!form.name.trim()) return ElMessage.warning('请填写设备名称')
-  busy.value = true
-  try {
-    const result = await post<{ code: string; id: string; expires_at: string }>('/pairing-codes', {
-      name: form.name,
-      group_id: form.group_id || null,
-    })
-    code.value = result.code
-    codeId.value = result.id
-    codeExpires.value = result.expires_at
-  } finally {
-    busy.value = false
-  }
-}
-async function cancelCode() {
-  await post(`/pairing-codes/${codeId.value}/revoke`)
-  code.value = ''
-  ElMessage.success('配对码已撤销')
+  void refresh()
 }
 async function addGroup() {
-  if (!newGroupName.value.trim()) return
-  await post('/groups', { name: newGroupName.value })
-  newGroupName.value = ''
-  await load()
+  if (!newGroupName.value.trim() || groupBusy.value) return
+  groupBusy.value = true
+  groupError.value = ''
+  try {
+    await post('/groups', { name: newGroupName.value.trim() })
+    newGroupName.value = ''
+    await refresh()
+  } catch (reason) {
+    groupError.value = reason instanceof Error ? reason.message : '添加失败，请重试'
+  } finally {
+    groupBusy.value = false
+  }
 }
 async function renameGroup(group: Group) {
+  let name: string
   try {
-    const { value } = await ElMessageBox.prompt('填写新的分组名称', '重命名分组', {
+    const result = await ElMessageBox.prompt('填写新的分组名称', '重命名分组', {
       inputValue: group.name,
       inputPattern: /\S/,
       inputErrorMessage: '名称不能为空',
     })
-    await patch(`/groups/${group.id}`, { name: value })
-    await load()
-  } catch (error) {
-    if (error !== 'cancel' && error !== 'close') console.error('Group update failed')
+    name = result.value
+  } catch {
+    return
+  }
+  try {
+    await patch(`/groups/${group.id}`, { name })
+    await refresh()
+  } catch (reason) {
+    groupError.value = reason instanceof Error ? reason.message : '重命名失败'
   }
 }
 async function deleteGroup(group: Group) {
   try {
-    await ElMessageBox.confirm('设备将恢复未分组，历史发布不受影响。', `删除「${group.name}」`, {
+    await ElMessageBox.confirm('教室会恢复未分组，历史发布不受影响。', `删除「${group.name}」`, {
       type: 'warning',
     })
-    await request(`/groups/${group.id}`, { method: 'DELETE' })
-    await load()
   } catch {
-    /* Cancel or API already reported. */
+    return
   }
-}
-function openPairing() {
-  form.name = ''
-  form.group_id = ''
-  code.value = ''
-  pairing.value = true
+  try {
+    await request(`/groups/${group.id}`, { method: 'DELETE' })
+    await refresh()
+  } catch (reason) {
+    groupError.value = reason instanceof Error ? reason.message : '删除失败'
+  }
 }
 </script>
 <template>
-  <div class="stats">
-    <div class="stat">
-      <span class="stat-label">设备总数 · 当前筛选</span
-      ><span class="stat-number">{{ total }}<small>台设备</small></span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">当前页在线</span
-      ><span class="stat-number" style="color: #238d75">{{ onlineCount }}<small>正在保持连接</small></span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">设备分组</span
-      ><span class="stat-number">{{ groups.length }}<small>个分组</small></span>
-    </div>
-  </div>
+  <LoadNotice :error="error" :loading="loading" @retry="refresh" />
   <section class="panel">
     <div class="section-title">
-      <h2>我的设备</h2>
+      <div>
+        <h2>我的教室</h2>
+        <p v-if="ready" class="muted">当前筛选共 {{ total }} 台 · 当前页在线 {{ onlineCount }} 台</p>
+      </div>
       <div class="table-actions">
         <el-button @click="manageGroups = true">管理分组</el-button
-        ><el-button type="primary" :icon="Plus" @click="openPairing">配对设备</el-button>
+        ><el-button type="primary" @click="pairing = true">连接教室</el-button>
       </div>
     </div>
     <div class="toolbar">
       <el-input
         v-model="q"
-        placeholder="搜索设备名称"
-        :prefix-icon="Search"
+        placeholder="搜索教室名称"
         clearable
-        style="width: 240px"
+        style="max-width: 220px"
         @keyup.enter="filterChanged"
         @clear="filterChanged"
       /><el-select
         v-model="groupId"
-        placeholder="全部分组"
         clearable
+        placeholder="全部分组"
         style="width: 180px"
         @change="filterChanged"
         ><el-option
@@ -142,51 +131,49 @@ function openPairing() {
           :key="group.id"
           :label="group.name"
           :value="group.id" /></el-select
-      ><el-button :icon="Refresh" circle aria-label="刷新设备" @click="refresh" /><span class="grow"></span
-      ><span class="muted">每 10 秒更新</span>
+      ><el-switch v-model="showRevoked" active-text="包含已撤销" @change="filterChanged" /><el-button
+        :loading="loading"
+        @click="refresh"
+        >刷新</el-button
+      >
     </div>
-    <el-table :data="items" row-key="id"
-      ><el-table-column label="设备" min-width="175"
-        ><template #default="{ row }"
-          ><router-link :to="'/devices/' + row.id" class="device-name">{{ row.name }}</router-link>
-          <div class="id-text">{{ row.id.slice(0, 12) }}</div></template
-        ></el-table-column
-      ><el-table-column label="连接" width="105"
-        ><template #default="{ row }"
-          ><el-tag
-            :type="row.revoked_at ? 'danger' : row.online ? 'success' : 'info'"
-            size="small"
-            effect="plain"
-            >{{ row.revoked_at ? '已撤销' : row.online ? '在线' : '离线' }}</el-tag
-          ></template
-        ></el-table-column
-      ><el-table-column label="分组" min-width="110"
-        ><template #default="{ row }">{{
-          groups.find((g) => g.id === row.group_id)?.name || '未分组'
-        }}</template></el-table-column
-      ><el-table-column label="课表" width="100"
-        ><template #default="{ row }"
-          ><ChannelStatus
-            :channel="
-              row.channels.find((c: any) => c.kind === 'profile' && c.generation > 0)
-            " /></template></el-table-column
-      ><el-table-column label="展示配置" width="110"
-        ><template #default="{ row }"
-          ><ChannelStatus
-            :channel="
-              row.channels.find((c: any) => c.kind === 'display_config' && c.generation > 0)
-            " /></template></el-table-column
-      ><el-table-column label="最后在线" min-width="170"
-        ><template #default="{ row }">{{ formatTime(row.last_seen_at) }}</template></el-table-column
-      ><el-table-column width="70"
-        ><template #default="{ row }"
-          ><router-link :to="'/devices/' + row.id"
-            ><el-button link type="primary">详情</el-button></router-link
-          ></template
-        ></el-table-column
-      ><template #empty><el-empty description="还没有设备，生成配对码开始连接" /></template
-    ></el-table>
+    <div class="resource-cards">
+      <article v-for="item in items" :key="item.id" class="resource-card">
+        <div class="section-title">
+          <router-link :to="`/devices/${item.id}`" class="device-name">{{ item.name }}</router-link
+          ><el-tag :type="item.revoked_at ? 'danger' : item.online ? 'success' : 'info'">{{
+            item.revoked_at ? '已撤销' : item.online ? '在线' : '离线'
+          }}</el-tag>
+        </div>
+        <p class="muted">
+          {{ groups.find((g) => g.id === item.group_id)?.name || '未分组' }} · 最近同步
+          {{ formatTime(item.last_seen_at) }}
+        </p>
+        <p>
+          课表
+          <ChannelStatus :channel="item.channels.find((c) => c.kind === 'profile' && c.generation > 0)" /> ·
+          客户端配置
+          <ChannelStatus
+            :channel="item.channels.find((c) => c.kind === 'display_config' && c.generation > 0)"
+          />
+        </p>
+        <div class="table-actions">
+          <router-link :to="`/devices/${item.id}`"><el-button>查看教室</el-button></router-link
+          ><router-link v-if="!item.revoked_at" :to="`/publish?device=${item.id}`"
+            ><el-button type="primary" plain>发布到这里</el-button></router-link
+          >
+        </div>
+      </article>
+    </div>
+    <el-empty
+      v-if="ready && !items.length"
+      :description="q || groupId ? '没有符合条件的教室' : '还没有教室，连接后即可发布课表'"
+      ><el-button v-if="!q && !groupId" type="primary" @click="pairing = true"
+        >连接第一间教室</el-button
+      ></el-empty
+    >
     <el-pagination
+      v-if="total > 20"
       v-model:current-page="page"
       :total="total"
       :page-size="20"
@@ -194,49 +181,23 @@ function openPairing() {
       @current-change="refresh"
     />
   </section>
-  <el-dialog v-model="pairing" title="配对新设备" width="480px"
-    ><template v-if="!code"
-      ><p class="muted">配对码 10 分钟内有效，只能绑定一台设备。</p>
-      <el-form label-position="top"
-        ><el-form-item label="设备名称"
-          ><el-input v-model="form.name" maxlength="100" placeholder="例如：高一（1）班教室" /></el-form-item
-        ><el-form-item label="所属分组"
-          ><el-select v-model="form.group_id" clearable placeholder="未分组"
-            ><el-option
-              v-for="group in groups"
-              :key="group.id"
-              :label="group.name"
-              :value="group.id" /></el-select></el-form-item></el-form></template
-    ><template v-else
-      ><div class="pair-code" data-testid="pairing-code">{{ code }}</div>
-      <p class="muted">有效期至 {{ formatTime(codeExpires) }}。请在客户端输入此码。</p>
-      <el-alert
-        title="配对码关闭后无法再次查看，可撤销后重新生成。"
-        type="info"
-        :closable="false" /></template
-    ><template #footer
-      ><el-button v-if="code" @click="cancelCode">撤销配对码</el-button
-      ><el-button v-else type="primary" :loading="busy" @click="makeCode">生成配对码</el-button
-      ><el-button @click="closePairing">{{ code ? '完成' : '取消' }}</el-button></template
-    ></el-dialog
-  >
-  <el-dialog v-model="manageGroups" title="管理设备分组" width="520px"
-    ><div class="toolbar">
+  <PairingWizard v-model="pairing" :groups="groups" @connected="refresh" />
+  <el-dialog v-model="manageGroups" title="管理教室分组" width="520px"
+    ><p v-if="groupError" role="alert" class="field-error">{{ groupError }}</p>
+    <div class="toolbar">
       <el-input
         v-model="newGroupName"
         maxlength="100"
         placeholder="新分组名称"
         style="flex: 1"
         @keyup.enter="addGroup"
-      /><el-button type="primary" @click="addGroup">添加</el-button>
+      /><el-button type="primary" :loading="groupBusy" @click="addGroup">添加</el-button>
     </div>
     <el-table :data="groups"
       ><el-table-column prop="name" label="分组名称" /><el-table-column label="操作" width="145"
         ><template #default="{ row }"
-          ><div class="table-actions">
-            <el-button link @click="renameGroup(row)">重命名</el-button
-            ><el-button link type="danger" @click="deleteGroup(row)">删除</el-button>
-          </div></template
+          ><el-button link @click="renameGroup(row)">重命名</el-button
+          ><el-button link type="danger" @click="deleteGroup(row)">删除</el-button></template
         ></el-table-column
       ></el-table
     ></el-dialog

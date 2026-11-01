@@ -1,0 +1,378 @@
+/* Use the console's page styling; retain the desktop editor's functional grouping. */
+.client-editor {
+  min-width: 0;
+}
+.client-editor-nav {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e1e9ed;
+}
+.client-editor-menu {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+}
+.client-editor-menu button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 14px 2px;
+  border: 0;
+  background: transparent;
+  color: #6d8590;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.client-editor-menu button:hover {
+  color: var(--el-color-primary);
+}
+.client-editor-menu button.active {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+.client-editor-menu button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--el-color-primary);
+  border-radius: 2px;
+}
+.client-editor button:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+.client-editor-menu .el-icon {
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.client-editor-main {
+  min-width: 0;
+}
+.client-editor-main :is(.el-select, .el-button, .timeline-point) {
+  scroll-margin-block: 100px;
+}
+.client-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 20px;
+}
+.client-card {
+  min-width: 0;
+}
+.client-card h3 {
+  font-size: 17px;
+  margin: 0 0 18px;
+  font-weight: 600;
+}
+.client-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.client-toolbar:last-child {
+  margin-bottom: 0;
+}
+.client-toolbar .el-button + .el-button,
+.client-editor-actions .el-button + .el-button {
+  margin-left: 0;
+}
+.client-toolbar .el-select {
+  width: 240px;
+  max-width: 100%;
+}
+.client-toolbar .grow,
+.client-editor-actions .grow {
+  flex: 1;
+}
+.client-editor-actions {
+  justify-content: flex-start;
+}
+.client-editor-actions .editor-state {
+  color: #8599a4;
+  font-size: 13px;
+}
+.client-editor .profile-tabs > .el-tabs__header {
+  display: none;
+}
+.client-editor .profile-tabs .el-tabs__content {
+  overflow: visible;
+}
+.client-editor .profile-tabs .profile-stats {
+  margin: 0;
+}
+.client-card > .el-form > .el-form-item:last-child,
+.display-name-form .el-form-item {
+  margin-bottom: 0;
+}
+.display-name-form {
+  max-width: 420px;
+}
+.profile-reminder-card .el-form {
+  margin-top: 20px;
+}
+.profile-rule-grid > .el-form-item {
+  min-width: 0;
+}
+.profile-rule-grid :is(.el-select, .el-date-editor, .el-input-number),
+.profile-editor-grid :is(.el-select, .el-date-editor) {
+  width: 100%;
+  max-width: 100%;
+}
+.profile-override-head > .el-select {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.profile-override-head > .el-date-editor {
+  flex: 1 1 200px;
+}
+.client-editor .profile-source-note {
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+.client-editor .el-alert {
+  margin-bottom: 16px;
+}
+.client-editor .form-hint {
+  line-height: 1.7;
+}
+.client-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 54px;
+  padding: 10px 0;
+}
+.client-setting-row + .client-setting-row {
+  border-top: 1px solid #edf1f3;
+}
+.client-setting-row > label,
+.client-setting-row > .setting-label {
+  flex: 1;
+  min-width: 0;
+}
+.client-setting-row .el-select,
+.client-setting-row .el-input,
+.client-setting-row .el-date-editor {
+  width: 260px;
+  max-width: 100%;
+}
+.client-setting-row .el-input-number {
+  width: 160px;
+}
+.client-setting-row .el-input-number .el-input {
+  width: auto;
+}
+.client-setting-row small {
+  display: block;
+  font-size: 12px;
+  color: #79909d;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+.client-component-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e1e9ed;
+  border-radius: 7px;
+  padding: 12px;
+  background: #fff;
+}
+.component-entry + .component-entry {
+  margin-top: 8px;
+}
+.component-entry:has(.client-component-options) .client-component-row {
+  border-radius: 8px 8px 0 0;
+}
+.client-component-row.selected {
+  border-color: var(--el-color-primary);
+  background: #f5faf9;
+}
+.component-name {
+  flex: 1;
+  min-width: 70px;
+}
+.component-grip {
+  cursor: grab;
+  color: #8599a4;
+  user-select: none;
+}
+.client-component-row .el-button + .el-button {
+  margin-left: 0;
+}
+.client-component-options {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid #e1e9ed;
+  border-top: 0;
+  border-radius: 0 0 7px 7px;
+}
+.preview-components {
+  display: flex;
+  position: relative;
+  flex-shrink: 0;
+  align-items: center;
+  gap: inherit;
+}
+.preview-components .component-list-leave-active {
+  width: auto;
+}
+.client-layout-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 18px 4px;
+  min-height: 86px;
+}
+.client-layout-preview .preview-component {
+  flex-shrink: 0;
+  border: 1px solid #e1e9ed;
+  border-radius: 6px;
+  padding: 14px 18px;
+  background: #f7f9fa;
+  cursor: grab;
+  color: #203c4c;
+  white-space: nowrap;
+}
+.client-layout-preview .preview-component.selected {
+  border-color: var(--el-color-primary);
+  background: #e3f1ee;
+}
+.preview-collapse {
+  color: #79909d;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.timeline-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 16px;
+}
+.timeline-scroll {
+  height: 400px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid #edf1f3;
+}
+.timeline-axis {
+  position: relative;
+  margin: 12px 0;
+  min-width: 180px;
+  touch-action: pan-y;
+}
+.timeline-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #edf1f3;
+  color: #8599a4;
+  font-size: 11px;
+}
+.timeline-tick span {
+  position: absolute;
+  top: -7px;
+  background: white;
+  padding-right: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.timeline-point {
+  position: absolute;
+  left: 62px;
+  right: 12px;
+  background: #edf6f3;
+  border: 1px solid #c0d6cf;
+  border-left: 4px solid var(--el-color-primary);
+  border-radius: 6px;
+  padding: 6px 12px;
+  text-align: left;
+  cursor: grab;
+  color: #234c43;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+.timeline-point.selected {
+  background: #e3f1ee;
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 1px var(--el-color-primary);
+}
+.timeline-point span {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.timeline-resize {
+  position: absolute;
+  height: 6px;
+  left: 0;
+  right: 0;
+  cursor: ns-resize;
+}
+.timeline-resize.start {
+  top: 0;
+}
+.timeline-resize.end {
+  bottom: 0;
+}
+.timeline-inspector .el-date-editor {
+  width: 100%;
+}
+.timeline-inspector .el-form-item {
+  margin-bottom: 20px;
+}
+.client-editor .subject-table {
+  width: 100%;
+}
+@media (max-width: 1100px) {
+  .timeline-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .timeline-scroll {
+    height: 300px;
+  }
+}
+@media (max-width: 760px) {
+  .client-editor-menu {
+    gap: 20px;
+  }
+  .client-editor-nav {
+    margin-bottom: 20px;
+  }
+  .client-page-title {
+    font-size: 18px;
+  }
+  .client-editor-actions {
+    gap: 8px;
+  }
+  .client-setting-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .client-setting-row > label,
+  .client-setting-row > .setting-label {
+    flex: 1 1 120px;
+  }
+  .client-setting-row .el-select,
+  .client-setting-row .el-input,
+  .client-setting-row .el-date-editor {
+    width: min(100%, 220px);
+  }
+  .client-component-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .client-toolbar .grow {
+    display: none;
+  }
+}

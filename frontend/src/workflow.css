@@ -1,0 +1,564 @@
+/* Task-oriented console: readable cards, contained previews and a full-page editor. */
+.main {
+  max-width: 1900px;
+}
+.main > .text-link,
+.page-content > .text-link {
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.page-content {
+  min-width: 0;
+}
+.two-columns > * {
+  min-width: 0;
+}
+.component-row {
+  flex-wrap: wrap;
+}
+.component-row > .grow {
+  flex: 1;
+}
+.component-row > .el-input {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.two-columns .el-date-editor {
+  max-width: 100%;
+}
+.load-notice,
+.main > .el-alert,
+.page-content > .el-alert {
+  margin-bottom: 18px;
+}
+.text-link {
+  color: #167c85;
+  font-weight: 500;
+}
+.text-link:hover {
+  text-decoration: underline;
+}
+.table-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.table-actions .el-button + .el-button {
+  margin-left: 0;
+}
+.welcome-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(120deg, #e4f1eb, #f8fcfa);
+}
+.welcome-panel h2 {
+  font-size: 25px;
+  margin: 12px 0;
+}
+.welcome-panel p {
+  color: #587166;
+  line-height: 1.7;
+}
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.task-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.task-card h2,
+.task-card p {
+  margin: 0;
+}
+.task-card p {
+  line-height: 1.8;
+}
+.task-card > a {
+  margin-top: auto;
+}
+.step-number {
+  color: #287c6d;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.resource-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+.resource-card {
+  border: 1px solid #e1e9ed;
+  background: #fcfdfd;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.resource-card p,
+.resource-card .section-title,
+.resource-card .section-title h2 {
+  margin: 0;
+}
+.resource-card > strong {
+  font-size: 17px;
+}
+.resource-card > .table-actions {
+  margin-top: auto;
+}
+.release-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid #e7eef0;
+  overflow-wrap: anywhere;
+}
+.release-row:first-of-type {
+  border-top: 0;
+}
+.release-row p {
+  margin: 7px 0 0;
+}
+.release-row > div {
+  min-width: 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.8;
+}
+details > summary {
+  padding: 5px 0;
+}
+details[open] > summary {
+  margin-bottom: 14px;
+}
+details .code-block {
+  max-height: 320px;
+}
+.editor-details summary .muted {
+  margin-left: 12px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.editor-details .el-tabs {
+  margin-top: 16px;
+}
+.editor-toolbar {
+  position: sticky;
+  top: 12px;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 6px 24px #203c4c12;
+}
+.editor-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 260px;
+}
+.editor-name label {
+  white-space: nowrap;
+  font-weight: 600;
+}
+.editor-name .el-input {
+  max-width: 400px;
+}
+.field-error {
+  color: #ac3c2c;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.mobile-weekdays {
+  display: none;
+}
+.week-board {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(105px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.week-column {
+  background: #f5f8f8;
+  border: 1px solid #e3ebeb;
+  padding: 8px;
+  border-radius: 10px;
+  min-height: 230px;
+  min-width: 0;
+}
+.week-column header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.week-column header .el-button {
+  padding: 2px;
+}
+.course-card {
+  text-align: left;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #cce2dc;
+  border-left: 3px solid #388b77;
+  border-radius: 7px;
+  margin-bottom: 8px;
+  padding: 10px 7px;
+  cursor: pointer;
+  color: #234c43;
+  overflow-wrap: anywhere;
+}
+.course-card:hover {
+  border-color: #388b77;
+  box-shadow: 0 2px 8px #167c8512;
+}
+.course-card:focus-visible {
+  outline: 2px solid #167c85;
+  outline-offset: 2px;
+}
+.course-card.invalid {
+  border-color: #b55740;
+}
+.course-time {
+  font-size: 11px;
+  color: #587b72;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.empty-day {
+  color: #7e9295;
+  font-size: 12px;
+  text-align: center;
+  padding: 22px 0;
+}
+.add-course.el-button {
+  width: 100%;
+  padding: 8px 0;
+  border: 1px dashed #c0d6cf;
+  font-size: 12px;
+}
+.editor-details .el-tabs__nav-scroll {
+  overflow-x: auto;
+}
+.editor-details .el-tabs__nav {
+  white-space: nowrap;
+}
+.editor-details .el-input-number,
+.editor-details .el-select,
+.editor-details .el-date-editor {
+  max-width: 100%;
+}
+.publish-panel > .el-alert,
+.pairing-wait > .el-alert {
+  margin-top: 18px;
+}
+.wizard-body {
+  padding: 28px 0;
+}
+.wizard-body h2 {
+  margin-bottom: 22px;
+}
+.wizard-body .el-select {
+  width: 100%;
+}
+.wizard-footer {
+  border-top: 1px solid #e4ecef;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.wizard-footer .grow {
+  flex: 1;
+}
+.device-choices {
+  display: grid;
+  gap: 10px;
+}
+.device-choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #dde7e6;
+  border-radius: 10px;
+  padding: 14px;
+}
+.device-choice > .el-checkbox {
+  margin-right: auto;
+  height: auto;
+}
+.device-choice .el-checkbox__label {
+  white-space: normal;
+  line-height: 1.5;
+}
+.group-choices {
+  margin-bottom: 12px;
+}
+.content-preview {
+  padding-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+.preview-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+  gap: 12px;
+}
+.preview-day {
+  background: #f3f7f5;
+  border-radius: 8px;
+  padding: 14px;
+}
+.preview-day p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.preview-day p span {
+  color: #59746b;
+}
+.publish-content {
+  border-top: 1px solid #e2ebe7;
+  margin-top: 22px;
+  padding-top: 16px;
+}
+.channel-result {
+  padding: 16px 0;
+  border-bottom: 1px solid #e9eeec;
+}
+.channel-result .el-tag {
+  margin-left: 12px;
+}
+.id-text,
+.code-block {
+  overflow-wrap: anywhere;
+}
+.code-block {
+  max-width: 100%;
+  overflow: auto;
+}
+.pairing-wait {
+  text-align: center;
+  padding: 20px 0;
+}
+.pair-code {
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.developer-help {
+  text-align: left;
+  margin-top: 25px;
+}
+.task-help {
+  margin-top: 22px;
+}
+.task-help p {
+  line-height: 1.9;
+  font-size: 14px;
+}
+.task-help .el-collapse-item__header {
+  height: auto;
+  padding: 16px 0;
+  line-height: 1.6;
+}
+.el-dialog {
+  max-width: calc(100vw - 24px);
+}
+.el-dialog .el-steps {
+  margin-bottom: 22px;
+}
+.el-dialog .el-time-picker,
+.el-dialog .el-date-editor {
+  max-width: 100%;
+}
+@media (max-width: 1000px) {
+  .task-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+@media (max-width: 720px) {
+  .sidebar {
+    position: relative;
+  }
+  .sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .main {
+    min-width: 0;
+  }
+  .welcome-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .welcome-panel h2 {
+    font-size: 22px;
+  }
+  .resource-card {
+    padding: 16px;
+  }
+  .release-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .editor-toolbar {
+    top: 0;
+    padding: 14px;
+    margin-inline: -4px;
+  }
+  .editor-name {
+    flex-wrap: wrap;
+    min-width: 0;
+    width: 100%;
+  }
+  .editor-name .el-input {
+    flex: 1;
+    min-width: 160px;
+  }
+  .editor-name .el-tag {
+    margin-left: auto;
+  }
+  .editor-toolbar > .table-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 5px;
+  }
+  .editor-toolbar .el-button {
+    padding: 8px 11px;
+  }
+  .mobile-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin-bottom: 18px;
+  }
+  .mobile-weekdays .el-radio-button__inner {
+    display: block;
+    width: 100%;
+    padding: 9px 0;
+    font-size: 12px;
+  }
+  .week-board {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+  .week-column {
+    display: none;
+    padding: 14px;
+  }
+  .week-column.mobile-active {
+    display: block;
+  }
+  .course-card {
+    padding: 14px;
+  }
+  .course-time {
+    font-size: 13px;
+  }
+  .course-card strong {
+    font-size: 16px;
+  }
+  .week-column header {
+    font-size: 16px;
+  }
+  .add-course.el-button {
+    padding: 12px;
+    font-size: 14px;
+  }
+  .editor-details summary .muted {
+    display: block;
+    margin: 0;
+  }
+  .el-steps--simple {
+    padding: 12px 8px;
+  }
+  .el-steps--simple .el-step__title {
+    font-size: 12px;
+  }
+  .el-steps--simple .el-step__head {
+    padding-right: 4px;
+  }
+  .el-steps--simple .el-step__arrow {
+    margin-inline: 5px;
+  }
+  .pair-code {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+  .preview-days {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wizard-footer {
+    gap: 8px;
+  }
+  .wizard-footer .text-link {
+    font-size: 12px;
+  }
+  .el-dialog {
+    padding: 18px;
+    margin-top: 6vh;
+  }
+  .el-dialog .el-step.is-simple .el-step__head {
+    display: none;
+  }
+  .profile-override-head > * {
+    min-width: 0;
+  }
+}
+.subject-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+}
+.subject-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #dde8e4;
+  border-radius: 10px;
+  background: #f8fbfa;
+  overflow-wrap: anywhere;
+}
+.subject-card p {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.subject-manager > .el-alert {
+  margin-bottom: 16px;
+}
+.subject-manager .section-title {
+  flex-wrap: wrap;
+}
+.subject-manager .section-title h2 {
+  margin-bottom: 8px;
+}
+.subject-manager:focus-visible {
+  outline: 2px solid #167c85;
+  outline-offset: 6px;
+}

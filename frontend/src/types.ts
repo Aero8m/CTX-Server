@@ -17,8 +17,8 @@ export type {
   ReleaseView as Release,
   PreviewView as Preview,
 } from './wire'
-export const kindLabel = (kind: string) => (kind === 'profile' ? '课表档案' : '展示配置')
+export const kindLabel = (kind: string) => (kind === 'profile' ? '课表档案' : '客户端配置')
 export const statusLabel = (status: string) =>
-  ({ pending: '待同步', applied: '已应用', failed: '应用失败', blocked: '已阻塞' })[status] || status
+  ({ pending: '等待同步', applied: '已生效', failed: '应用失败', blocked: '需要处理' })[status] || status
 export const formatTime = (value: string | null) =>
   value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '尚未连接'

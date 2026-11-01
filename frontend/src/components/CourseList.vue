@@ -24,14 +24,8 @@ const rowIssues = computed(() => courseTimeIssues(courses.value))
 const limitReached = computed(() => courses.value.length >= 1000)
 const addTestId = computed(() => props.addTestId || `${props.testIdPrefix}-add`)
 
-function suggestions(query: string, callback: (items: { value: string }[]) => void) {
-  const keyword = query.trim()
-  callback(
-    props.subjects.filter((name) => !keyword || name.includes(keyword)).map((name) => ({ value: name })),
-  )
-}
 function add() {
-  if (limitReached.value) return
+  if (limitReached.value || !props.subjects.length) return
   courses.value.push(newCourse(courses.value))
   emit('changed')
 }
@@ -61,13 +55,21 @@ function issueFor(index: number) {
       <el-table-column label="科目" min-width="170">
         <template #default="{ row, $index }">
           <div :data-testid="`${testIdPrefix}-subject-${$index}`">
-            <el-autocomplete
+            <el-select
               v-model="row.subject"
-              :fetch-suggestions="suggestions"
-              :maxlength="100"
-              placeholder="科目名称"
+              filterable
+              clearable
+              placeholder="选择已有科目"
               @change="emit('changed')"
-            />
+              ><el-option
+                v-if="row.subject && !subjects.includes(row.subject)"
+                :value="row.subject"
+                :label="`${row.subject}（未登记）`"
+                disabled /><el-option v-for="name in subjects" :key="name" :label="name" :value="name"
+            /></el-select>
+            <div v-if="!subjects.includes(row.subject)" class="course-issue">
+              {{ row.subject ? '请先在科目设置中登记，或重新选择已有科目' : '请选择已有科目' }}
+            </div>
           </div>
           <div v-if="issueFor($index)" class="course-issue">{{ issueFor($index) }}</div>
         </template>
@@ -120,19 +122,22 @@ function issueFor(index: number) {
       </template>
     </el-table>
     <div class="course-toolbar">
-      <el-button :disabled="limitReached" :data-testid="addTestId" @click="add">添加课程</el-button>
+      <el-button :disabled="limitReached || !subjects.length" :data-testid="addTestId" @click="add"
+        >添加课程</el-button
+      >
       <el-button :disabled="courses.length < 2" @click="sort">按时间排序</el-button>
       <span v-if="limitReached" class="form-hint">每天最多 1000 节课</span>
+      <span v-if="!subjects.length" class="form-hint">请先在上方的科目设置中添加科目</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.course-list :deep(.el-autocomplete) {
+.course-list :deep(.el-select) {
   width: 100%;
 }
-.course-list :deep(.el-time-picker) {
-  width: 112px;
+.course-list :deep(.el-date-editor.el-input) {
+  width: 100%;
 }
 .course-issue {
   color: #b55740;

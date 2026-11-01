@@ -47,7 +47,7 @@ async function submit() {
         : {}),
     })
     auth.accept(result)
-    await router.push('/devices')
+    await router.push('/home')
   } catch (error) {
     if (error instanceof ApiError) {
       details.value = error.message

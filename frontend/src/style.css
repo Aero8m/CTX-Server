@@ -4,6 +4,13 @@
   background: #f3f6f8;
   font-synthesis: none;
   --el-color-primary: #167c85;
+  --el-color-primary-rgb: 22, 124, 133;
+  --el-color-primary-light-3: #5ca3aa;
+  --el-color-primary-light-5: #8bbec2;
+  --el-color-primary-light-7: #b9d8da;
+  --el-color-primary-light-8: #d0e5e7;
+  --el-color-primary-light-9: #e8f2f3;
+  --el-color-primary-dark-2: #12636a;
   --el-border-radius-base: 8px;
   --el-font-size-base: 14px;
 }

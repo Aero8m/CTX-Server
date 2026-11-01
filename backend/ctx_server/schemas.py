@@ -256,13 +256,55 @@ class Countdown(Wire):
         return self
 
 
+class WindowInterceptionRule(Wire):
+    exePath: Annotated[str, Field(min_length=1, max_length=32768)]
+    className: Annotated[str, Field(min_length=1, max_length=256)]
+    titleContains: Text = ""
+    enabled: bool = True
+
+    _nonblank = field_validator("exePath", "className")(nonblank)
+
+
+class WindowInterception(Wire):
+    rules: Annotated[list[WindowInterceptionRule], Field(max_length=256)]
+
+
+class PluginPreference(Wire):
+    enabled: bool
+
+
+class PluginPreferences(Wire):
+    plugins: Annotated[dict[str, PluginPreference], Field(max_length=256)]
+
+    @field_validator("plugins")
+    @classmethod
+    def plugin_ids(cls, value):
+        for plugin_id in value:
+            if len(plugin_id) > 128 or not re.fullmatch(r"[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+", plugin_id):
+                raise ValueError("插件 ID 必须与客户端清单一致，例如 org.example.clock")
+            if any(re.fullmatch(r"(?:con|prn|aux|nul|com[0-9]|lpt[0-9])", part) for part in plugin_id.split(".")):
+                raise ValueError("插件 ID 包含保留名称")
+        return value
+
+
 class DisplayConfig(Wire):
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1, 2] = 1
     courseBarConfig: CourseBar
     appearanceConfig: Appearance = Field(default_factory=Appearance)
     desktopCountdownConfig: Countdown = Field(default_factory=Countdown)
+    windowInterceptionConfig: WindowInterception | None = None
+    pluginConfig: PluginPreferences | None = None
 
     _strict_version = field_validator("schema_version", mode="before")(NativeProfile.strict_version.__func__)
+
+    @model_validator(mode="after")
+    def version_sections(self):
+        sections = {"windowInterceptionConfig", "pluginConfig"}
+        if self.schema_version == 1 and sections & self.model_fields_set:
+            raise ValueError("窗口拦截与插件偏好需要 schema_version 2")
+        if any(getattr(self, name) is None for name in sections & self.model_fields_set):
+            raise ValueError("不管理的配置分区应省略，不能为 null")
+        return self
 
 
 class Credentials(Wire):

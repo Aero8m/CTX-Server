@@ -6,7 +6,7 @@
 |---|---|---|
 | 原生档案根节点 | `version: 1` | Qt `ProfileExchange` 原生 JSON |
 | 本地主配置 | `version: 2` | Qt `MainConfig.json`，服务端不整体下发 |
-| 云端展示配置 | `schema_version: 1` | CTX 白名单配置载荷 |
+| 云端展示配置 | `schema_version: 1 / 2` | CTX 白名单配置载荷 |
 
 不要用主配置的 v2 标识原生档案或云端配置。HTTP API 的 `/v1/` 则是接口版本，独立于上述内容版本。
 
@@ -15,7 +15,7 @@
 最小示例位于 `examples/profiles/minimal.json`，完整类型和边界见 `contracts/NativeProfile.schema.json`。服务端使用严格的类型及未知字段拒绝策略，并检查格式外的语义约束。管理端可以在网页中直接新建和编辑这些字段；保存前会复用同一套校验与规范化，网页不会修改 `version` 或生成新的格式版本。
 
 - `profile.name` 为非空名称。
-- `subjects` 包含 `name`、`simplifiedName`、`teacher`，科目名称不能重复。
+- `subjects` 包含 `name`、`simplifiedName`、`teacher`，科目名称不能重复。网页编辑先维护科目表，再选择已有科目编排周课表、临时调课和指定科目提醒；保存前检查科目引用。导入旧档案遇到未登记的科目时，可以通过「补齐缺失科目」保留已有课程后继续编辑。
 - `timeLines` 包含命名时间线及 `timePoints`。
 - `schedules` 为周课表，每张有稳定 `id`、`name`、`mode` 和 `daySchedules`。模式为 `all`／`odd`／`even`；星期为 1～7，周一为 1。
 - 课程的 `startTime`、`endTime` 为 `HH:mm:ss`，开始早于结束，同一天或时间线内不能重叠，允许相邻时段。
@@ -68,7 +68,27 @@
 | 边距 | 整数 0～10000，原版布局保留但不使用 |
 | 缩放 | 整数 50～200 |
 
-云端不接受 `profileName`、`uiAccessEnabled`、插件、窗口拦截、全局提醒、`screenName` 或任意扩展设置。保留本机字段必须在客户端合并时保证，服务端不能替客户端执行本地文件事务。
+云端不接受 `profileName`、`uiAccessEnabled`、插件授权与专属参数、全局提醒、`screenName` 或任意扩展设置。保留本机字段必须在客户端合并时保证，服务端不能替客户端执行本地文件事务。
+
+### v2：窗口拦截与插件启用偏好
+
+“我的配置”通过 `/display` 列表进入 `/display/new` 或 `/display/:id/edit` 编辑。新增分区的“由此配置管理”默认关闭，关闭时字段省略，设备保留本地值。只管理原有分区的新配置使用 v1；启用新增分区时使用 v2。v1 禁止携带以下字段（包括 null）。
+
+```json
+{
+  "windowInterceptionConfig": {
+    "rules": [{"exePath":"C:/Apps/example.exe","className":"ExampleWindow","titleContains":"","enabled":true}]
+  },
+  "pluginConfig": {"plugins":{"org.example.clock":{"enabled":true}}}
+}
+```
+
+以上字段添加到原有展示配置顶层，同时设置 `schema_version: 2`。两者均可省略，不能设为 null。
+
+- `rules` 最多 256 条，完整替换设备规则；空数组清空规则。程序路径与窗口类名必填，长度分别不超过 32768、256；标题条件可空，最多 1000 字符。保存后重新应用，恢复本次隐藏且不再匹配任何启用规则的窗口。仅 Windows 支持。
+- `plugins` 最多 256 项，ID 遵循客户端清单规则，长度不超过 128。每项仅接收布尔字段 `enabled`；只合并列出的 ID，不重置其他插件。移除条目仅停止管理，停用必须明确下发 false。
+- 插件偏好在下次启动生效，保留本地授权、批准版本、故障及恢复模式；未安装或未授权的插件不会因发布自动运行。专属参数仍在客户端编辑。
+- 发布的 `format_version` 与内容 `schema_version` 一致。新客户端支持 `[1,2]`，只支持 v1 的设备收到 v2 时报告 `unsupported_format`。历史发布及回滚内容保持原始字节和版本。
 
 ## 内容摘要
 

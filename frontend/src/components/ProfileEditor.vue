@@ -2,28 +2,26 @@
 import { computed, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CourseList from './CourseList.vue'
-import type { DateOverride, NativeProfile, Subject, TimeLine } from '../wire'
+import type { DateOverride, NativeProfile, TimeLine } from '../wire'
 import {
   MODE_LABELS,
   WEEKDAY_LABELS,
-  addMissingSubjects,
-  missingSubjects,
+  cloneJson,
   newDay,
   newOverride,
   newReminderRule,
-  newSubject,
   newTimeLine,
   newWeek,
   nextTimeSlot,
   overridesFor,
   rebaseOverride,
   reconcileOverrides,
+  registeredSubjectNames,
   removeDay,
   removeWeek,
-  renameSubject,
+  sameCourses,
   sectionOfIssue,
   sourceDay,
-  subjectUsage,
   timeRangeIssues,
   weekdayName,
   type ProfileTab,
@@ -32,14 +30,24 @@ import {
 
 const draft = defineModel<NativeProfile>('draft', { required: true })
 const tab = defineModel<ProfileTab>('tab', { default: 'basic' })
-const props = withDefaults(defineProps<{ issues?: ValidationIssue[] }>(), {
-  issues: () => [],
-})
+const props = withDefaults(
+  defineProps<{ issues?: ValidationIssue[]; sections?: ProfileTab[]; showProfileName?: boolean }>(),
+  {
+    showProfileName: true,
+    issues: () => [],
+    sections: () => ['basic', 'weeks', 'subjects', 'dates', 'rules', 'preview'],
+  },
+)
 const emit = defineEmits<{ changed: [] }>()
+const overrideKeys = new WeakMap<DateOverride, number>()
+let nextOverrideKey = 0
+function overrideKey(item: DateOverride) {
+  if (!overrideKeys.has(item)) overrideKeys.set(item, ++nextOverrideKey)
+  return overrideKeys.get(item)!
+}
 
 const weekId = ref('')
 const weekday = ref(1)
-const subjectEdit = ref<{ subject: Subject; oldName: string }>()
 
 const profile = computed(() => draft.value.profile)
 const subjects = computed(() => profile.value.subjects ?? [])
@@ -47,8 +55,7 @@ const timeLines = computed(() => profile.value.timeLines ?? [])
 const schedules = computed(() => profile.value.schedules ?? [])
 const overrides = computed(() => profile.value.dateOverrides ?? [])
 const reminderRules = computed(() => profile.value.reminderRules ?? [])
-const subjectNames = computed(() => subjects.value.map((subject) => subject.name))
-const missing = computed(() => missingSubjects(draft.value))
+const subjectNames = computed(() => registeredSubjectNames(draft.value))
 const week = computed(() => schedules.value.find((item) => item.id === weekId.value))
 const day = computed(() => week.value?.daySchedules.find((item) => item.enableDay === weekday.value))
 
@@ -125,56 +132,6 @@ async function deleteDay() {
   changed()
 }
 
-function addSubject() {
-  subjects.value.push(newSubject())
-  changed()
-}
-function startSubjectEdit(subject: Subject) {
-  subjectEdit.value = { subject, oldName: subject.name }
-}
-async function deleteSubject(subject: Subject) {
-  const usage = subjectUsage(draft.value, subject.name)
-  try {
-    if (usage.courses || usage.rules)
-      await ElMessageBox.confirm(
-        `该科目仍被 ${usage.courses} 节课程和 ${usage.rules} 条提醒引用；删除科目表条目不会删除课程。`,
-        '删除科目',
-      )
-  } catch {
-    return
-  }
-  const index = subjects.value.indexOf(subject)
-  if (index >= 0) subjects.value.splice(index, 1)
-  changed()
-}
-function commitSubjectName(subject: Subject) {
-  const oldName = subjectEdit.value?.subject === subject ? subjectEdit.value.oldName : subject.name
-  const nextName = subject.name.trim()
-  if (!nextName) {
-    subject.name = oldName
-    ElMessage.warning('科目名称不能为空')
-    return
-  }
-  subject.name = nextName
-  if (nextName === oldName) return
-  if (subjects.value.some((item) => item !== subject && item.name === nextName)) {
-    subject.name = oldName
-    ElMessage.warning('科目名称已存在')
-    return
-  }
-  const count = oldName ? renameSubject(draft.value, oldName, nextName) : 0
-  reconcileOverrides(draft.value)
-  subjectEdit.value = { subject, oldName: nextName }
-  if (count) ElMessage.success(`已同步更新 ${count} 处引用`)
-  changed()
-}
-function addMissing() {
-  const count = addMissingSubjects(draft.value)
-  if (!count) ElMessage.info('没有缺失的科目')
-  else ElMessage.success(`已补齐 ${count} 个科目`)
-  changed()
-}
-
 function addTimeLine() {
   timeLines.value.push(newTimeLine())
   changed()
@@ -233,18 +190,41 @@ function removeOverride(index: number) {
   overrides.value.splice(index, 1)
   changed()
 }
-function changeOverrideWeek(override: DateOverride, value: string) {
-  override.sourceWeekScheduleId = value
-  const days = daysOfWeek(value)
-  if (!days.some((item) => item.enableDay === override.sourceWeekday))
-    override.sourceWeekday = days[0]?.enableDay ?? override.sourceWeekday
+async function selectReference(override: DateOverride, weekId: string, weekday: number) {
+  const source = sourceDay(draft.value, weekId, weekday)
+  if (!source) {
+    ElMessage.warning('参考周课表还没有课程，请先添加课程')
+    return
+  }
+  if (!sameCourses(override.classes, override.sourceClasses)) {
+    try {
+      await ElMessageBox.confirm('选择新的参考日会替换这一天已自定义的课程。', '更换参考日', {
+        confirmButtonText: '替换当天课程',
+        cancelButtonText: '保留当前课程',
+      })
+    } catch {
+      return
+    }
+  }
+  override.sourceWeekScheduleId = weekId
+  override.sourceWeekday = weekday
   rebaseOverride(draft.value, override)
+  override.classes = cloneJson(source.classes)
   changed()
 }
-function changeOverrideWeekday(override: DateOverride, value: number) {
-  override.sourceWeekday = value
-  rebaseOverride(draft.value, override)
-  changed()
+async function changeOverrideWeek(override: DateOverride, value: string) {
+  const days = daysOfWeek(value)
+  const weekday = days.some((item) => item.enableDay === override.sourceWeekday)
+    ? override.sourceWeekday
+    : days[0]?.enableDay
+  if (weekday === undefined) {
+    ElMessage.warning('参考周课表还没有课程，请先添加课程')
+    return
+  }
+  await selectReference(override, value, weekday)
+}
+async function changeOverrideWeekday(override: DateOverride, value: number) {
+  await selectReference(override, override.sourceWeekScheduleId, value)
 }
 
 function addRule() {
@@ -255,13 +235,6 @@ function removeRule(index: number) {
   reminderRules.value.splice(index, 1)
   changed()
 }
-function subjectSuggestions(query: string, callback: (items: { value: string }[]) => void) {
-  const keyword = query.trim()
-  callback(
-    subjectNames.value.filter((name) => !keyword || name.includes(keyword)).map((name) => ({ value: name })),
-  )
-}
-
 function focusIssue(issue: ValidationIssue) {
   const section = sectionOfIssue(issue)
   tab.value = section
@@ -281,16 +254,16 @@ defineExpose({ focusIssue })
 
 <template>
   <el-tabs v-model="tab" class="profile-tabs">
-    <el-tab-pane label="基本信息" name="basic">
-      <el-form label-position="top">
+    <el-tab-pane v-if="sections.includes('basic')" label="基本信息" name="basic">
+      <el-form label-position="top" class="panel client-card">
         <div class="profile-editor-grid">
-          <el-form-item label="档案名称">
+          <el-form-item v-if="showProfileName" label="档案名称">
             <el-input v-model="profile.name" maxlength="100" placeholder="档案名称" @change="changed" />
             <div v-if="messages('profile.name').length" class="profile-field-error">
               {{ messages('profile.name').join('；') }}
             </div>
           </el-form-item>
-          <el-form-item label="学期开始日期">
+          <el-form-item label="学期第一天">
             <el-date-picker
               v-model="profile.semesterStartDate"
               type="date"
@@ -317,31 +290,34 @@ defineExpose({ focusIssue })
             </div>
           </el-form-item>
         </div>
+        <p class="form-hint">
+          所选日期所在周为第 1 周（单周），每周一开始新的一周，用于自动匹配单周 /
+          双周课表。手动选择为空时自动匹配。
+        </p>
       </el-form>
-      <div class="profile-stats">
-        <span
-          >科目 <b>{{ subjects.length }}</b></span
-        >
-        <span
-          >时间线 <b>{{ timeLines.length }}</b></span
-        >
-        <span
-          >周课表 <b>{{ schedules.length }}</b></span
-        >
-        <span
-          >特殊安排 <b>{{ overrides.length }}</b></span
-        >
-        <span
-          >提醒规则 <b>{{ reminderRules.length }}</b></span
-        >
-      </div>
-      <p class="form-hint">
-        手动选择为空时按星期和单双周自动匹配；设置学期开始日期后，日期预览才能判断单双周。档案 ID
-        由系统维护，不在页面中修改。
-      </p>
+      <section class="panel client-card profile-summary-card">
+        <h3>数据统计</h3>
+        <div class="profile-stats">
+          <span
+            >科目 <b>{{ subjects.length }}</b></span
+          >
+          <span
+            >时间线 <b>{{ timeLines.length }}</b></span
+          >
+          <span
+            >周课表 <b>{{ schedules.length }}</b></span
+          >
+          <span
+            >特殊安排 <b>{{ overrides.length }}</b></span
+          >
+          <span
+            >提醒规则 <b>{{ reminderRules.length }}</b></span
+          >
+        </div>
+      </section>
     </el-tab-pane>
 
-    <el-tab-pane label="周课表" name="weeks">
+    <el-tab-pane v-if="sections.includes('weeks')" label="多套与单双周" name="weeks">
       <div class="toolbar">
         <el-select
           v-model="weekId"
@@ -440,275 +416,262 @@ defineExpose({ focusIssue })
       </el-empty>
     </el-tab-pane>
 
-    <el-tab-pane label="科目与节次" name="subjects">
-      <div class="profile-editor-grid">
-        <section>
-          <h3 class="profile-subtitle">科目表</h3>
-          <el-alert
-            v-if="missing.length"
-            type="info"
-            :closable="false"
-            :title="`有 ${missing.length} 个课程科目不在科目表中`"
-          >
-            <el-button size="small" @click="addMissing">补齐缺失科目</el-button>
-          </el-alert>
-          <el-table :data="subjects" size="small">
-            <el-table-column label="科目名称" min-width="150">
-              <template #default="{ row, $index }">
-                <div :data-testid="`profile-subject-name-${$index}`">
-                  <el-input
-                    v-model="row.name"
-                    maxlength="100"
-                    placeholder="科目名称"
-                    @focus="startSubjectEdit(row)"
-                    @change="commitSubjectName(row)"
-                  />
-                </div>
-                <div v-if="messages(`profile.subjects.${$index}.name`).length" class="profile-field-error">
-                  {{ messages(`profile.subjects.${$index}.name`).join('；') }}
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="简称" width="110">
-              <template #default="{ row }">
-                <el-input v-model="row.simplifiedName" maxlength="100" @change="changed" />
-              </template>
-            </el-table-column>
-            <el-table-column label="教师" width="130">
-              <template #default="{ row }">
-                <el-input v-model="row.teacher" maxlength="100" @change="changed" />
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="76">
-              <template #default="{ row }">
-                <el-button link type="danger" @click="deleteSubject(row)">删除</el-button>
-              </template>
-            </el-table-column>
-            <template #empty>
-              <el-empty description="还没有科目" :image-size="60" />
-            </template>
-          </el-table>
-          <el-button data-testid="profile-add-subject" @click="addSubject">添加科目</el-button>
-          <p class="form-hint">课程科目可以直接输入；科目表用于提供候选、简称和教师信息。</p>
-        </section>
-        <section>
-          <h3 class="profile-subtitle">时间线 / 节次</h3>
-          <div v-for="(line, lineIndex) in timeLines" :key="lineIndex" class="profile-rule-card">
-            <div class="toolbar">
-              <el-input
-                v-model="line.name"
-                maxlength="100"
-                placeholder="时间线名称"
-                style="max-width: 220px"
-                @change="changed"
-              />
-              <el-button link type="danger" @click="removeTimeLine(lineIndex)">删除</el-button>
-            </div>
-            <div v-if="messages(`profile.timeLines.${lineIndex}.name`).length" class="profile-field-error">
-              {{ messages(`profile.timeLines.${lineIndex}.name`).join('；') }}
-            </div>
-            <el-table :data="line.timePoints" size="small">
-              <el-table-column label="开始" width="130">
-                <template #default="{ row }">
-                  <el-time-picker
-                    v-model="row.startTime"
-                    format="HH:mm"
-                    value-format="HH:mm:ss"
-                    :clearable="false"
-                    @change="changed"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="结束" width="130">
-                <template #default="{ row }">
-                  <el-time-picker
-                    v-model="row.endTime"
-                    format="HH:mm"
-                    value-format="HH:mm:ss"
-                    :clearable="false"
-                    @change="changed"
-                  />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="70">
-                <template #default="{ $index }">
-                  <el-button link type="danger" @click="removeTimePoint(line, $index)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-            <div
-              v-for="issue in lineIssues(line)"
-              :key="`${lineIndex}-${issue.index}-${issue.message}`"
-              class="profile-field-error"
-            >
-              第 {{ issue.index + 1 }} 个时段：{{ issue.message }}
-            </div>
-            <el-button @click="addTimePoint(line)">添加时段</el-button>
+    <el-tab-pane v-if="sections.includes('subjects')" label="作息时间" name="subjects">
+      <section>
+        <h3 class="profile-subtitle">时间线 / 节次</h3>
+        <div v-for="(line, lineIndex) in timeLines" :key="lineIndex" class="profile-rule-card">
+          <div class="toolbar">
+            <el-input
+              v-model="line.name"
+              maxlength="100"
+              placeholder="时间线名称"
+              style="max-width: 220px"
+              @change="changed"
+            />
+            <el-button link type="danger" @click="removeTimeLine(lineIndex)">删除</el-button>
           </div>
-          <el-empty v-if="!timeLines.length" description="还没有时间线" :image-size="60" />
-          <el-button @click="addTimeLine">添加时间线</el-button>
-          <p class="form-hint">时间线用于记录作息时间；课程时间仍以课程自身的开始和结束为准。</p>
-        </section>
-      </div>
+          <div v-if="messages(`profile.timeLines.${lineIndex}.name`).length" class="profile-field-error">
+            {{ messages(`profile.timeLines.${lineIndex}.name`).join('；') }}
+          </div>
+          <el-table :data="line.timePoints" size="small">
+            <el-table-column label="开始" width="130">
+              <template #default="{ row }">
+                <el-time-picker
+                  v-model="row.startTime"
+                  format="HH:mm"
+                  value-format="HH:mm:ss"
+                  :clearable="false"
+                  @change="changed"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column label="结束" width="130">
+              <template #default="{ row }">
+                <el-time-picker
+                  v-model="row.endTime"
+                  format="HH:mm"
+                  value-format="HH:mm:ss"
+                  :clearable="false"
+                  @change="changed"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="70">
+              <template #default="{ $index }">
+                <el-button link type="danger" @click="removeTimePoint(line, $index)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div
+            v-for="issue in lineIssues(line)"
+            :key="`${lineIndex}-${issue.index}-${issue.message}`"
+            class="profile-field-error"
+          >
+            第 {{ issue.index + 1 }} 个时段：{{ issue.message }}
+          </div>
+          <el-button @click="addTimePoint(line)">添加时段</el-button>
+        </div>
+        <el-empty v-if="!timeLines.length" description="还没有时间线" :image-size="60" />
+        <el-button @click="addTimeLine">添加时间线</el-button>
+        <p class="form-hint">时间线用于记录作息时间；课程时间仍以课程自身的开始和结束为准。</p>
+      </section>
     </el-tab-pane>
 
-    <el-tab-pane label="日期特殊安排" name="dates">
+    <el-tab-pane v-if="sections.includes('dates')" label="临时调课" name="dates">
       <div class="toolbar">
-        <el-button data-testid="profile-add-override" @click="addOverride">添加日期特殊安排</el-button>
+        <el-button type="primary" data-testid="profile-add-override" @click="addOverride"
+          >添加临时调课</el-button
+        >
       </div>
       <p class="form-hint">
-        日期特殊安排的优先级高于手动选择和自动匹配。来源快照必须与来源日的课程一致，修改来源课程时会自动同步。
+        选择调课日期，再选择参考周课表和星期，最后编辑当天课程。临时调课只影响指定日期，优先于每周课程。
       </p>
-      <div v-for="(override, index) in overrides" :key="index" class="profile-rule-card">
-        <div class="profile-override-head">
-          <el-date-picker
-            v-model="override.date"
-            type="date"
-            value-format="YYYY-MM-DD"
-            :clearable="false"
-            @change="changed"
-          />
-          <el-select
-            :model-value="override.sourceWeekScheduleId"
-            placeholder="来源周课表"
-            @change="changeOverrideWeek(override, $event)"
-          >
-            <el-option v-for="item in schedules" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
-          <el-select
-            :model-value="override.sourceWeekday"
-            placeholder="来源星期"
-            @change="changeOverrideWeekday(override, $event)"
-          >
-            <el-option
-              v-for="item in daysOfWeek(override.sourceWeekScheduleId)"
-              :key="item.enableDay"
-              :label="item.name"
-              :value="item.enableDay"
-            />
-          </el-select>
-          <el-button link type="danger" @click="removeOverride(index)">删除</el-button>
-        </div>
-        <div v-if="messages(`profile.dateOverrides.${index}.date`).length" class="profile-field-error">
-          {{ messages(`profile.dateOverrides.${index}.date`).join('；') }}
-        </div>
+      <TransitionGroup name="component-list" tag="div" class="component-list profile-rule-list">
         <div
-          v-if="messages(`profile.dateOverrides.${index}.sourceClasses`).length"
-          class="profile-field-error"
+          v-for="(override, index) in overrides"
+          :key="overrideKey(override)"
+          class="panel client-card profile-override-card"
         >
-          {{ messages(`profile.dateOverrides.${index}.sourceClasses`).join('；') }}
+          <div class="profile-override-head">
+            <el-date-picker
+              v-model="override.date"
+              aria-label="调课日期"
+              type="date"
+              value-format="YYYY-MM-DD"
+              :clearable="false"
+              @change="changed"
+            />
+            <el-select
+              :model-value="override.sourceWeekScheduleId"
+              placeholder="参考周课表"
+              aria-label="参考周课表"
+              @change="changeOverrideWeek(override, $event)"
+            >
+              <el-option v-for="item in schedules" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+            <el-select
+              :model-value="override.sourceWeekday"
+              placeholder="参考星期"
+              aria-label="参考星期"
+              @change="changeOverrideWeekday(override, $event)"
+            >
+              <el-option
+                v-for="item in daysOfWeek(override.sourceWeekScheduleId)"
+                :key="item.enableDay"
+                :label="item.name"
+                :value="item.enableDay"
+              />
+            </el-select>
+            <el-button link type="danger" @click="removeOverride(index)">删除</el-button>
+          </div>
+          <div v-if="messages(`profile.dateOverrides.${index}.date`).length" class="profile-field-error">
+            {{ messages(`profile.dateOverrides.${index}.date`).join('；') }}
+          </div>
+          <div
+            v-if="messages(`profile.dateOverrides.${index}.sourceClasses`).length"
+            class="profile-field-error"
+          >
+            {{ messages(`profile.dateOverrides.${index}.sourceClasses`).join('；') }}
+          </div>
+          <p class="profile-source-note">
+            参考日课程：{{ sourceSummary(override) }}。在下方编辑这一天的实际课程。
+          </p>
+          <CourseList
+            v-model="override.classes"
+            :subjects="subjectNames"
+            :test-id-prefix="`profile-override-course-${index}`"
+            empty-hint="这一天不上课或使用自定义安排"
+            @changed="changed"
+          />
         </div>
-        <p class="profile-source-note">来源快照：{{ sourceSummary(override) }}</p>
-        <CourseList
-          v-model="override.classes"
-          :subjects="subjectNames"
-          :test-id-prefix="`profile-override-course-${index}`"
-          empty-hint="这一天不上课或使用自定义安排"
-          @changed="changed"
-        />
-      </div>
-      <el-empty v-if="!overrides.length" description="还没有日期特殊安排" :image-size="60" />
+      </TransitionGroup>
+      <el-empty
+        v-if="!overrides.length"
+        class="panel"
+        description="没有临时调课，将按每周课程上课"
+        :image-size="60"
+      />
     </el-tab-pane>
 
-    <el-tab-pane label="提醒规则" name="rules">
+    <el-tab-pane v-if="sections.includes('rules')" label="提醒规则" name="rules">
       <div class="toolbar">
-        <el-button data-testid="profile-add-rule" @click="addRule">添加提醒规则</el-button>
+        <el-button type="primary" data-testid="profile-add-rule" @click="addRule">添加提醒规则</el-button>
       </div>
-      <div v-for="(rule, index) in reminderRules" :key="rule.id || index" class="profile-rule-card">
-        <div class="toolbar">
-          <el-switch v-model="rule.enabled" @change="changed" />
-          <el-input
-            v-model="rule.name"
-            maxlength="100"
-            placeholder="提醒名称"
-            style="max-width: 220px"
-            @change="changed"
-          />
-          <span class="grow"></span>
-          <el-button link type="danger" @click="removeRule(index)">删除</el-button>
-        </div>
-        <div v-if="messages(`profile.reminderRules.${index}.name`).length" class="profile-field-error">
-          {{ messages(`profile.reminderRules.${index}.name`).join('；') }}
-        </div>
-        <el-form label-position="top">
-          <div class="profile-rule-grid">
-            <el-form-item label="提醒文本">
-              <el-input
-                v-model="rule.text"
-                type="textarea"
-                :rows="2"
-                maxlength="1000"
-                show-word-limit
-                @change="changed"
-              />
-              <div v-if="messages(`profile.reminderRules.${index}.text`).length" class="profile-field-error">
-                {{ messages(`profile.reminderRules.${index}.text`).join('；') }}
-              </div>
-            </el-form-item>
-            <el-form-item label="提醒星期">
-              <el-checkbox-group v-model="rule.weekdays" @change="changed">
-                <el-checkbox v-for="number in 7" :key="number" :value="number">{{
-                  WEEKDAY_LABELS[number - 1]
-                }}</el-checkbox>
-              </el-checkbox-group>
-              <div
-                v-if="messages(`profile.reminderRules.${index}.weekdays`).length"
-                class="profile-field-error"
-              >
-                {{ messages(`profile.reminderRules.${index}.weekdays`).join('；') }}
-              </div>
-            </el-form-item>
-            <el-form-item label="课程条件">
-              <el-select v-model="rule.course" @change="changed">
-                <el-option label="不限" :value="0" />
-                <el-option label="指定科目" :value="1" />
-                <el-option label="指定节次" :value="2" />
-              </el-select>
-            </el-form-item>
-            <el-form-item v-if="rule.course === 1" label="指定科目">
-              <el-autocomplete
-                v-model="rule.subject"
-                :fetch-suggestions="subjectSuggestions"
-                :maxlength="100"
-                placeholder="科目名称"
-                @change="changed"
-              />
-              <div
-                v-if="messages(`profile.reminderRules.${index}.subject`).length"
-                class="profile-field-error"
-              >
-                {{ messages(`profile.reminderRules.${index}.subject`).join('；') }}
-              </div>
-            </el-form-item>
-            <el-form-item label="节次">
-              <el-input-number v-model="rule.period" :min="1" :max="999" @change="changed" />
-            </el-form-item>
-            <el-form-item label="提醒时机">
-              <el-select v-model="rule.timing" @change="changed">
-                <el-option label="固定时间" :value="0" />
-                <el-option label="上课时" :value="1" />
-                <el-option label="下课时" :value="2" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="时间">
-              <el-time-picker
-                v-model="rule.time"
-                format="HH:mm"
-                value-format="HH:mm:ss"
-                :clearable="false"
-                @change="changed"
-              />
-              <div v-if="messages(`profile.reminderRules.${index}.time`).length" class="profile-field-error">
-                {{ messages(`profile.reminderRules.${index}.time`).join('；') }}
-              </div>
-            </el-form-item>
-            <el-form-item label="偏移分钟">
-              <el-input-number v-model="rule.offsetMinutes" :min="-1439" :max="1439" @change="changed" />
-            </el-form-item>
+      <TransitionGroup name="component-list" tag="div" class="component-list profile-rule-list">
+        <div
+          v-for="(rule, index) in reminderRules"
+          :key="rule.id || index"
+          class="panel client-card profile-reminder-card"
+        >
+          <div class="toolbar">
+            <el-switch v-model="rule.enabled" @change="changed" />
+            <el-input
+              v-model="rule.name"
+              maxlength="100"
+              placeholder="提醒名称"
+              style="max-width: 220px"
+              @change="changed"
+            />
+            <span class="grow"></span>
+            <el-button link type="danger" @click="removeRule(index)">删除</el-button>
           </div>
-        </el-form>
-      </div>
-      <el-empty v-if="!reminderRules.length" description="还没有提醒规则" :image-size="60" />
+          <div v-if="messages(`profile.reminderRules.${index}.name`).length" class="profile-field-error">
+            {{ messages(`profile.reminderRules.${index}.name`).join('；') }}
+          </div>
+          <el-form label-position="top">
+            <div class="profile-rule-grid">
+              <el-form-item label="提醒文本">
+                <el-input
+                  v-model="rule.text"
+                  type="textarea"
+                  :rows="2"
+                  maxlength="1000"
+                  show-word-limit
+                  @change="changed"
+                />
+                <div
+                  v-if="messages(`profile.reminderRules.${index}.text`).length"
+                  class="profile-field-error"
+                >
+                  {{ messages(`profile.reminderRules.${index}.text`).join('；') }}
+                </div>
+              </el-form-item>
+              <el-form-item label="提醒星期">
+                <el-checkbox-group v-model="rule.weekdays" @change="changed">
+                  <el-checkbox v-for="number in 7" :key="number" :value="number">{{
+                    WEEKDAY_LABELS[number - 1]
+                  }}</el-checkbox>
+                </el-checkbox-group>
+                <div
+                  v-if="messages(`profile.reminderRules.${index}.weekdays`).length"
+                  class="profile-field-error"
+                >
+                  {{ messages(`profile.reminderRules.${index}.weekdays`).join('；') }}
+                </div>
+              </el-form-item>
+              <el-form-item label="课程条件">
+                <el-select v-model="rule.course" @change="changed">
+                  <el-option label="不限" :value="0" />
+                  <el-option label="指定科目" :value="1" />
+                  <el-option label="指定节次" :value="2" />
+                </el-select>
+              </el-form-item>
+              <el-form-item v-if="rule.course === 1" label="指定科目">
+                <el-select
+                  v-model="rule.subject"
+                  filterable
+                  clearable
+                  placeholder="选择已有科目"
+                  @change="changed"
+                >
+                  <el-option
+                    v-if="rule.subject && !subjectNames.includes(rule.subject)"
+                    :value="rule.subject"
+                    :label="`${rule.subject}（未登记）`"
+                    disabled
+                  />
+                  <el-option v-for="name in subjectNames" :key="name" :label="name" :value="name" />
+                </el-select>
+                <div
+                  v-if="messages(`profile.reminderRules.${index}.subject`).length"
+                  class="profile-field-error"
+                >
+                  {{ messages(`profile.reminderRules.${index}.subject`).join('；') }}
+                </div>
+              </el-form-item>
+              <el-form-item label="节次">
+                <el-input-number v-model="rule.period" :min="1" :max="999" @change="changed" />
+              </el-form-item>
+              <el-form-item label="提醒时机">
+                <el-select v-model="rule.timing" @change="changed">
+                  <el-option label="固定时间" :value="0" />
+                  <el-option label="上课时" :value="1" />
+                  <el-option label="下课时" :value="2" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="时间">
+                <el-time-picker
+                  v-model="rule.time"
+                  format="HH:mm"
+                  value-format="HH:mm:ss"
+                  :clearable="false"
+                  @change="changed"
+                />
+                <div
+                  v-if="messages(`profile.reminderRules.${index}.time`).length"
+                  class="profile-field-error"
+                >
+                  {{ messages(`profile.reminderRules.${index}.time`).join('；') }}
+                </div>
+              </el-form-item>
+              <el-form-item label="偏移分钟">
+                <el-input-number v-model="rule.offsetMinutes" :min="-1439" :max="1439" @change="changed" />
+              </el-form-item>
+            </div>
+          </el-form>
+        </div>
+      </TransitionGroup>
+      <el-empty v-if="!reminderRules.length" class="panel" description="还没有提醒规则" :image-size="60" />
       <p class="form-hint">
         提醒规则跟随档案下发。固定时间提醒不能使用
         <code>{科目}</code>
@@ -718,7 +681,7 @@ defineExpose({ focusIssue })
       </p>
     </el-tab-pane>
 
-    <el-tab-pane label="日期预览" name="preview">
+    <el-tab-pane v-if="sections.includes('preview')" label="日期预览" name="preview">
       <slot name="preview" />
     </el-tab-pane>
   </el-tabs>

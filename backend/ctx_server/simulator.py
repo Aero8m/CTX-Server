@@ -135,7 +135,7 @@ class DeviceClient:
             "/api/v1/device/sync",
             {
                 "client_version": "simulator/0.1.0",
-                "supported_formats": {"profile": [1], "display_config": [1]},
+                "supported_formats": {"profile": [1], "display_config": [1, 2]},
                 "applied": self.state["applied"],
             },
         )

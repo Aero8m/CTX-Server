@@ -2,7 +2,12 @@ import { ElMessage } from 'element-plus'
 import type { Page } from './types'
 import { beginRequest } from './requestLoading'
 
-export type RequestOptions = RequestInit & { background?: boolean }
+export type RequestOptions = RequestInit & {
+  background?: boolean
+  reportError?: boolean
+  raw?: boolean
+  timeoutMs?: number
+}
 
 let csrf = ''
 export class ApiError extends Error {
@@ -19,21 +24,55 @@ export function setCsrf(value: string) {
   csrf = value
 }
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { background = false, ...fetchOptions } = options
+  const {
+    background = false,
+    reportError = !background,
+    raw = false,
+    timeoutMs = 30000,
+    ...fetchOptions
+  } = options
   const finish = background ? () => {} : beginRequest()
+  const controller = new AbortController()
+  let timedOut = false
+  const timeout = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+  const abort = () => controller.abort(options.signal?.reason)
+  if (options.signal?.aborted) abort()
+  else options.signal?.addEventListener('abort', abort, { once: true })
+  function transportError() {
+    const error = new ApiError(
+      timedOut ? 'request_timeout' : 'network_error',
+      timedOut ? '请求等待超时，请重试确认结果' : '网络连接失败，请检查连接后重试',
+      null,
+      '',
+    )
+    if (reportError) ElMessage.error(error.message)
+    return error
+  }
   try {
     const headers = new Headers(options.headers)
     if (options.body) headers.set('Content-Type', 'application/json')
     if (csrf && options.method && options.method !== 'GET') headers.set('X-CSRF-Token', csrf)
     let response: Response
     try {
-      response = await fetch('/api/v1' + path, { ...fetchOptions, headers, credentials: 'same-origin' })
+      response = await fetch('/api/v1' + path, {
+        ...fetchOptions,
+        headers,
+        credentials: 'same-origin',
+        signal: controller.signal,
+      })
     } catch {
-      const error = new ApiError('network_error', '网络连接失败，请检查连接后重试', null, '')
-      ElMessage.error(error.message)
-      throw error
+      throw transportError()
     }
-    const result = await response.json().catch(() => ({}))
+    const result = await response.json().catch(() => {
+      if (controller.signal.aborted) throw transportError()
+      if (!response.ok) return {}
+      const error = new ApiError('invalid_response', '服务返回了无法读取的结果，请重试确认', null, '')
+      if (reportError) ElMessage.error(error.message)
+      throw error
+    })
     if (!response.ok) {
       const error = new ApiError(
         result.error?.code || 'http_error',
@@ -43,11 +82,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       )
       if (response.status === 401 && !path.startsWith('/auth/'))
         window.dispatchEvent(new Event('ctx-session-expired'))
-      ElMessage.error(error.message)
+      if (reportError) ElMessage.error(error.message)
       throw error
     }
-    return result.data as T
+    return (raw ? result : result.data) as T
   } finally {
+    clearTimeout(timeout)
+    options.signal?.removeEventListener('abort', abort)
     finish()
   }
 }

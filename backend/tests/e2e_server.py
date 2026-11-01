@@ -16,6 +16,7 @@ app = create_app(
         "REQUIRE_HTTPS": False,
         "PROXY_HOPS": 0,
         "TRUSTED_HOSTS": None,
+        "RATELIMIT_ENABLED": False,
     }
 )
 with app.app_context():

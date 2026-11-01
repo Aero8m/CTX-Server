@@ -92,3 +92,37 @@ describe('request loading lifecycle', () => {
     await expect(pending).resolves.toEqual([1, 2])
   })
 })
+
+it('reads immutable version content without the API envelope and strips client options', async () => {
+  const content = { version: 1, profile: { name: '已发布课表' } }
+  const fetch = vi.fn().mockResolvedValue(Response.json(content))
+  vi.stubGlobal('fetch', fetch)
+  await expect(
+    get('/versions/v/content', { raw: true, reportError: false, timeoutMs: 1000 }),
+  ).resolves.toEqual(content)
+  expect(fetch.mock.calls[0][1]).not.toHaveProperty('raw')
+  expect(fetch.mock.calls[0][1]).not.toHaveProperty('reportError')
+  expect(fetch.mock.calls[0][1]).not.toHaveProperty('timeoutMs')
+})
+
+it('times out stalled requests and releases loading for a safe retry', async () => {
+  vi.useFakeTimers()
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      (_url: string, options: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          options.signal!.addEventListener('abort', () => reject(new Error('aborted')))
+        }),
+    ),
+  )
+  try {
+    const pending = get('/slow', { timeoutMs: 100, reportError: false })
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'request_timeout' })
+    await vi.advanceTimersByTimeAsync(100)
+    await rejected
+    expect(requestPending.value).toBe(false)
+  } finally {
+    vi.useRealTimers()
+  }
+})

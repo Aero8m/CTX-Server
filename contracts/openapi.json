@@ -3474,12 +3474,99 @@
         "title": "CourseBar",
         "type": "object"
       },
+      "PluginPreference": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "PluginPreference",
+        "type": "object"
+      },
+      "PluginPreferences": {
+        "additionalProperties": false,
+        "properties": {
+          "plugins": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PluginPreference"
+            },
+            "maxProperties": 256,
+            "title": "Plugins",
+            "type": "object"
+          }
+        },
+        "required": [
+          "plugins"
+        ],
+        "title": "PluginPreferences",
+        "type": "object"
+      },
+      "WindowInterception": {
+        "additionalProperties": false,
+        "properties": {
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/WindowInterceptionRule"
+            },
+            "maxItems": 256,
+            "title": "Rules",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rules"
+        ],
+        "title": "WindowInterception",
+        "type": "object"
+      },
+      "WindowInterceptionRule": {
+        "additionalProperties": false,
+        "properties": {
+          "exePath": {
+            "maxLength": 32768,
+            "minLength": 1,
+            "title": "Exepath",
+            "type": "string"
+          },
+          "className": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Classname",
+            "type": "string"
+          },
+          "titleContains": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Titlecontains",
+            "type": "string"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "exePath",
+          "className"
+        ],
+        "title": "WindowInterceptionRule",
+        "type": "object"
+      },
       "DisplayConfig": {
         "additionalProperties": false,
         "properties": {
           "schema_version": {
-            "const": 1,
             "default": 1,
+            "enum": [
+              1,
+              2
+            ],
             "title": "Schema Version",
             "type": "integer"
           },
@@ -3491,6 +3578,28 @@
           },
           "desktopCountdownConfig": {
             "$ref": "#/components/schemas/Countdown"
+          },
+          "windowInterceptionConfig": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowInterception"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "pluginConfig": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PluginPreferences"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [

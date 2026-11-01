@@ -150,7 +150,7 @@ describe('profile editor helpers', () => {
     const draft = sample()
     const rule = draft.profile.reminderRules![0]
     rule.subject = ''
-    expect(localIssues(draft).map((issue) => issue.message)).toContain('指定科目提醒必须填写科目')
+    expect(localIssues(draft).map((issue) => issue.message)).toContain('请选择已有科目')
     rule.course = 0
     rule.timing = 0
     rule.text = '考试开始'
@@ -168,6 +168,31 @@ describe('profile editor helpers', () => {
     expect(missingSubjects(draft)).toEqual(['英语'])
     expect(addMissingSubjects(draft)).toBe(1)
     expect(draft.profile.subjects.some((subject) => subject.name === '英语')).toBe(true)
+  })
+
+  it('requires registered subjects in weekly courses, temporary courses and subject reminders', () => {
+    const draft = sample()
+    draft.profile.subjects = []
+    const issues = localIssues(draft)
+    expect(
+      issues.some((issue) => issue.path === 'profile.schedules.0.daySchedules.0.classes.0.subject'),
+    ).toBe(true)
+    expect(issues.some((issue) => issue.path === 'profile.dateOverrides.0.sourceClasses.0.subject')).toBe(
+      true,
+    )
+    expect(issues.some((issue) => issue.path === 'profile.dateOverrides.0.classes.0.subject')).toBe(true)
+    expect(issues.some((issue) => issue.path === 'profile.reminderRules.0.subject')).toBe(true)
+    expect(addMissingSubjects(draft)).toBe(2)
+    expect(localIssues(draft)).toEqual([])
+  })
+
+  it('keeps subject references valid after a rename and detects removed definitions', () => {
+    const draft = sample()
+    renameSubject(draft, '语文', '国语')
+    expect(localIssues(draft)).toEqual([])
+    draft.profile.subjects = draft.profile.subjects.filter((subject) => subject.name !== '国语')
+    expect(missingSubjects(draft)).toEqual(['国语'])
+    expect(localIssues(draft).filter((issue) => issue.message.includes('尚未设置'))).toHaveLength(4)
   })
 
   it('maps server error paths to editor sections', () => {

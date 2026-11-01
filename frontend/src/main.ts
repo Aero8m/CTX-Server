@@ -6,6 +6,8 @@ import 'element-plus/dist/index.css'
 import './style.css'
 import './responsive.css'
 import './motion.css'
+import './workflow.css'
+import './editor.css'
 import App from './App.vue'
 import { router } from './router'
 

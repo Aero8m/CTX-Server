@@ -5,8 +5,9 @@ import sys
 
 from ctx_server import create_app
 from ctx_server.extensions import db
-from ctx_server.models import Captcha
+from ctx_server.models import Account, Captcha
 from ctx_server.security import digest
+from werkzeug.security import generate_password_hash
 
 url = os.environ["E2E_DATABASE_URL"]
 if "test" not in url.rsplit("/", 1)[-1].lower():
@@ -19,8 +20,13 @@ app = create_app(
     }
 )
 with app.app_context():
-    captcha = db.session.get(Captcha, sys.argv[1])
-    if captcha is None:
-        raise RuntimeError("Captcha not found")
-    captcha.answer_hash = digest("captcha:ABCDE")
+    if sys.argv[1] == "--account":
+        db.session.add(
+            Account(username=sys.argv[2], password_hash=generate_password_hash("browser-password-123"))
+        )
+    else:
+        captcha = db.session.get(Captcha, sys.argv[1])
+        if captcha is None:
+            raise RuntimeError("Captcha not found")
+        captcha.answer_hash = digest("captcha:ABCDE")
     db.session.commit()

@@ -167,7 +167,16 @@ export type FieldComponentspacing = number
  * @maxItems 32
  */
 export type FieldComponents = Component[]
-export type FieldSchemaVersion = 1
+export type FieldEnabled2 = boolean
+export type FieldExepath = string
+export type FieldClassname = string
+export type FieldTitlecontains = string
+export type FieldEnabled3 = boolean
+/**
+ * @maxItems 256
+ */
+export type FieldRules = WindowInterceptionRule[]
+export type FieldSchemaVersion = 1 | 2
 export type FieldId3 = string
 export type FieldUsername1 = string
 export type FieldCreatedAt = string
@@ -334,6 +343,10 @@ export interface WireContracts {
   Component?: Component
   Countdown?: Countdown
   CourseBar?: CourseBar
+  PluginPreference?: PluginPreference
+  PluginPreferences?: PluginPreferences
+  WindowInterception?: WindowInterception
+  WindowInterceptionRule?: WindowInterceptionRule
   DisplayConfig?: DisplayConfig
   AccountView?: AccountView
   GroupView?: GroupView
@@ -547,11 +560,31 @@ export interface CourseBar {
   componentSpacing?: FieldComponentspacing
   components: FieldComponents
 }
+export interface PluginPreference {
+  enabled: FieldEnabled2
+}
+export interface PluginPreferences {
+  plugins: FieldPlugins
+}
+export interface FieldPlugins {
+  [k: string]: PluginPreference
+}
+export interface WindowInterception {
+  rules: FieldRules
+}
+export interface WindowInterceptionRule {
+  exePath: FieldExepath
+  className: FieldClassname
+  titleContains?: FieldTitlecontains
+  enabled?: FieldEnabled3
+}
 export interface DisplayConfig {
   schema_version?: FieldSchemaVersion
   courseBarConfig: CourseBar
   appearanceConfig?: Appearance
   desktopCountdownConfig?: Countdown
+  windowInterceptionConfig?: WindowInterception | null
+  pluginConfig?: PluginPreferences | null
 }
 export interface AccountView {
   id: FieldId3

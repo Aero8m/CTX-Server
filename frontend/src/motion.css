@@ -57,6 +57,13 @@
 .sidebar nav a,
 .guide-quick-link,
 .guide-toc a,
+.resource-card,
+.device-choice,
+.client-editor-menu button,
+.client-editor-menu button::after,
+.client-component-row,
+.preview-component,
+.timeline-point,
 .el-button {
   transition:
     background-color 180ms ease,
@@ -64,6 +71,32 @@
     color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms var(--motion-ease);
+}
+.client-editor-menu button::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--el-color-primary);
+  border-radius: 2px;
+  transform: scaleX(0);
+}
+.client-editor-menu button.active::after {
+  transform: scaleX(1);
+}
+.client-editor-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.wizard-body,
+.pairing-wait,
+.page-content .el-result,
+.page-content .profile-stats,
+.page-content .resource-card,
+details[open] > :not(summary) {
+  animation: content-arrive 220ms var(--motion-ease) backwards;
 }
 .sidebar nav a .el-icon {
   transition: transform 180ms var(--motion-ease);
@@ -75,6 +108,14 @@
   .guide-quick-link:hover,
   .el-button:not(.is-disabled, .is-loading, .is-text, .is-link):hover {
     transform: translateY(-1px);
+  }
+  .resource-card:hover,
+  .device-choice:hover {
+    border-color: var(--el-color-primary-light-7);
+  }
+  .client-editor-menu button:hover,
+  .preview-component:hover {
+    color: var(--el-color-primary);
   }
 }
 .el-button:not(.is-disabled, .is-loading):active {

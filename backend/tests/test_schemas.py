@@ -59,6 +59,51 @@ def test_display_whitelist_and_ranges(section, field, value):
         normalize_content("display_config", content)
 
 
+def test_display_v2_optional_sections_and_legacy_preservation():
+    legacy, _ = normalize_content("display_config", DISPLAY)
+    assert legacy["schema_version"] == 1
+    assert "windowInterceptionConfig" not in legacy and "pluginConfig" not in legacy
+    content = deepcopy(DISPLAY) | {
+        "schema_version": 2,
+        "windowInterceptionConfig": {"rules": [
+            {"exePath": "C:/Apps/test.exe", "className": "TestWindow"}
+        ]},
+        "pluginConfig": {"plugins": {"org.example.clock": {"enabled": True}}},
+    }
+    normalized, _ = normalize_content("display_config", content)
+    assert normalized["windowInterceptionConfig"]["rules"][0]["titleContains"] == ""
+    assert normalized["windowInterceptionConfig"]["rules"][0]["enabled"] is True
+    assert normalize_content("display_config", normalized)[0] == normalized
+    content["windowInterceptionConfig"]["rules"] = []
+    assert normalize_content("display_config", content)[0]["windowInterceptionConfig"] == {"rules": []}
+
+
+@pytest.mark.parametrize("section,value", [
+    ("windowInterceptionConfig", None),
+    ("windowInterceptionConfig", {"rules": [{"exePath": " ", "className": "Window"}]}),
+    ("windowInterceptionConfig", {"rules": [{"exePath": "a.exe", "className": ""}]}),
+    ("windowInterceptionConfig", {"rules": [], "unknown": True}),
+    ("pluginConfig", {"plugins": {"invalid": {"enabled": True}}}),
+    ("pluginConfig", {"plugins": {"org.con.test": {"enabled": True}}}),
+    ("pluginConfig", {"plugins": {"org.example.clock": {"enabled": "true"}}}),
+    ("pluginConfig", {"plugins": {"org.example.clock": {"enabled": True, "grantedPermissions": {}}}}),
+])
+def test_display_v2_rejects_invalid_rules_and_plugin_preferences(section, value):
+    for version in (1, 2):
+        content = deepcopy(DISPLAY) | {"schema_version": version, section: value}
+        with pytest.raises(APIError):
+            normalize_content("display_config", content)
+
+
+@pytest.mark.parametrize("section,value", [
+    ("windowInterceptionConfig", {"rules": []}),
+    ("pluginConfig", {"plugins": {}}),
+])
+def test_display_v1_rejects_new_sections(section, value):
+    with pytest.raises(APIError):
+        normalize_content("display_config", deepcopy(DISPLAY) | {section: value})
+
+
 def test_date_preview_manual_odd_even_and_override():
     value = deepcopy(PROFILE)
     data = value["profile"]

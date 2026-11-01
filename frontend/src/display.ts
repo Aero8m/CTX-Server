@@ -41,6 +41,25 @@ export function defaultDisplay(): DisplayConfig {
     },
   }
 }
+export function prepareDisplay(value?: unknown): DisplayConfig {
+  const defaults = defaultDisplay()
+  const content = value ? (JSON.parse(JSON.stringify(value)) as DisplayConfig) : defaults
+  // Unmanaged sections must be omitted, including in downloaded drafts.
+  if (!content.windowInterceptionConfig) delete content.windowInterceptionConfig
+  if (!content.pluginConfig) delete content.pluginConfig
+  return {
+    ...content,
+    schema_version:
+      content.windowInterceptionConfig || content.pluginConfig ? 2 : content.schema_version || 1,
+    courseBarConfig: {
+      ...defaults.courseBarConfig,
+      ...content.courseBarConfig,
+      components: content.courseBarConfig.components.map((item) => ({ enabled: true, ...item })),
+    },
+    appearanceConfig: { ...defaults.appearanceConfig, ...content.appearanceConfig },
+    desktopCountdownConfig: { ...defaults.desktopCountdownConfig, ...content.desktopCountdownConfig },
+  }
+}
 export function moveComponent(config: DisplayConfig, index: number, direction: -1 | 1) {
   const rows = config.courseBarConfig.components
   const next = index + direction

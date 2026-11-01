@@ -383,7 +383,9 @@ def release_inputs(payload, rollback_id=None):
                 {
                     "resource_id": resource.id,
                     "kind": resource.kind,
-                    "format_version": 1,
+                    "format_version": (
+                        content["schema_version"] if resource.kind == "display_config" else content["version"]
+                    ),
                     "payload": body,
                     "sha256": hashlib.sha256(body.encode()).hexdigest(),
                 }

@@ -9,7 +9,7 @@ const tagType = (status: string) =>
 <template>
   <el-tooltip :content="channel?.reason || '尚无详细信息'" :disabled="!channel?.reason"
     ><el-tag :type="tagType(channel?.status || 'pending')" effect="light" size="small">{{
-      channel ? statusLabel(channel.status) : '未分配'
+      channel ? statusLabel(channel.status) : '尚未发布'
     }}</el-tag></el-tooltip
   >
 </template>

@@ -1,26 +1,42 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { Monitor, Calendar, Setting, Upload, Reading, User, SwitchButton } from '@element-plus/icons-vue'
+import {
+  Monitor,
+  Calendar,
+  House,
+  Upload,
+  Setting,
+  Reading,
+  User,
+  SwitchButton,
+} from '@element-plus/icons-vue'
 import { useAuth } from './store'
 import appIcon from './assets/classtopland-next.png'
-import RequestOverlay from './components/RequestOverlay.vue'
 const auth = useAuth(),
   route = useRoute(),
   router = useRouter()
 const links = [
-  { path: '/devices', label: '设备管理', icon: Monitor },
-  { path: '/profiles', label: '课表档案', icon: Calendar },
-  { path: '/display', label: '展示配置', icon: Setting },
-  { path: '/releases', label: '发布中心', icon: Upload },
-  { path: '/guide', label: '使用教程', icon: Reading },
+  { path: '/home', label: '工作台', icon: House },
+  { path: '/profiles', label: '我的课表', icon: Calendar },
+  { path: '/display', label: '我的配置', icon: Setting },
+  { path: '/devices', label: '教室设备', icon: Monitor },
+  { path: '/releases', label: '发布记录', icon: Upload },
+  { path: '/guide', label: '使用帮助', icon: Reading },
 ]
 async function logout() {
-  await auth.logout()
-  await router.push('/login')
+  if (route.path !== '/home') {
+    const failure = await router.push('/home')
+    if (failure) return
+  }
+  try {
+    await auth.logout()
+    await router.push('/login')
+  } catch {
+    /* The request layer reports a failed logout. */
+  }
 }
 </script>
 <template>
-  <RequestOverlay />
   <router-view v-if="!auth.account" v-slot="{ Component }">
     <Transition name="page" mode="out-in" appear>
       <div v-if="Component" :key="route.path"><component :is="Component" /></div>
@@ -28,25 +44,30 @@ async function logout() {
   </router-view>
   <div v-else class="shell">
     <aside class="sidebar">
-      <router-link to="/devices" class="brand" aria-label="ClassTopLand Next">
+      <router-link to="/home" class="brand" aria-label="ClassTopLand Next">
         <img class="brand-icon" :src="appIcon" alt="" width="44" height="44" />
         <span class="brand-name">ClassTopLand Next</span>
       </router-link>
-      <div class="nav-caption">管理工作区</div>
-      <nav>
+      <div class="nav-caption">教室工作区</div>
+      <nav aria-label="主要导航">
         <router-link
           v-for="link in links"
           :key="link.path"
           :to="link.path"
-          :class="{ active: route.path.startsWith(link.path) }"
-          ><el-icon><component :is="link.icon" /></el-icon>{{ link.label }}</router-link
+          :class="{
+            active:
+              route.path.startsWith(link.path) || (link.path === '/releases' && route.path === '/publish'),
+          }"
         >
+          <el-icon><component :is="link.icon" /></el-icon>{{ link.label }}
+        </router-link>
       </nav>
-      <div class="sidebar-note"><span class="status-dot"></span> 每一次连接，都让信息同步</div>
+      <div class="sidebar-note">从一张课表开始，连接每间教室。</div>
       <div class="account-link">
-        <router-link to="/account"
+        <router-link to="/account" aria-label="账号设置" title="账号设置"
           ><el-icon><User /></el-icon>{{ auth.account.username }}</router-link
-        ><el-button text aria-label="退出登录" @click="logout"
+        >
+        <el-button text aria-label="退出登录" @click="logout"
           ><el-icon><SwitchButton /></el-icon
         ></el-button>
       </div>
@@ -61,7 +82,7 @@ async function logout() {
                 <h1>{{ pageRoute.meta.title }}</h1>
                 <p>{{ pageRoute.meta.caption }}</p>
               </div>
-              <span class="workspace-badge">个人工作区</span>
+              <router-link to="/guide" class="workspace-badge">需要帮助？</router-link>
             </header>
             <component :is="Component" />
           </div>

@@ -298,6 +298,16 @@ export function missingSubjects(profile: NativeProfile): string[] {
   return [...used].filter((name) => !known.has(name)).sort()
 }
 
+export function registeredSubjectNames(profile: NativeProfile): string[] {
+  return [
+    ...new Set(
+      profile.profile.subjects
+        .map((subject) => subject.name)
+        .filter((name) => name.trim() && [...name].length <= 100),
+    ),
+  ]
+}
+
 export function addMissingSubjects(profile: NativeProfile): number {
   const missing = missingSubjects(profile)
   for (const name of missing)
@@ -373,6 +383,12 @@ export function localIssues(draft: NativeProfile): ValidationIssue[] {
   const schedules = profile.schedules ?? []
   const overrides = profile.dateOverrides ?? []
   const rules = profile.reminderRules ?? []
+  const registered = new Set(registeredSubjectNames(draft))
+  const checkSubject = (name: string, path: string) => {
+    if (!text(name)) add(path, '请选择已有科目')
+    else if (tooLong(name, 100)) add(path, '科目不能超过 100 个字符')
+    else if (!registered.has(name)) add(path, `科目「${name}」尚未设置，请先添加或选择已有科目`)
+  }
 
   if (draft.version !== 1) add('version', '只支持原生档案版本 1')
   if (!text(profile.name)) add('profile.name', '请填写档案名称')
@@ -428,8 +444,7 @@ export function localIssues(draft: NativeProfile): ValidationIssue[] {
       if (day.classes.length > 1000) add(`${dayPath}.classes`, '每天最多 1000 节课')
       day.classes.forEach((course, courseIndex) => {
         const coursePath = `${dayPath}.classes.${courseIndex}`
-        if (!text(course.subject)) add(`${coursePath}.subject`, '请填写科目')
-        else if (tooLong(course.subject, 100)) add(`${coursePath}.subject`, '科目不能超过 100 个字符')
+        checkSubject(course.subject, `${coursePath}.subject`)
       })
       for (const issue of courseTimeIssues(day.classes))
         add(`${dayPath}.classes.${issue.index}.startTime`, issue.message)
@@ -453,6 +468,10 @@ export function localIssues(draft: NativeProfile): ValidationIssue[] {
     else if (!sameCourses(day.classes, override.sourceClasses))
       add(`${path}.sourceClasses`, '来源快照与来源日课程不一致')
     if (override.classes.length > 1000) add(`${path}.classes`, '特殊安排最多 1000 节课')
+    for (const key of ['sourceClasses', 'classes'] as const)
+      override[key].forEach((course, courseIndex) =>
+        checkSubject(course.subject, `${path}.${key}.${courseIndex}.subject`),
+      )
     for (const issue of courseTimeIssues(override.sourceClasses))
       add(`${path}.sourceClasses.${issue.index}.startTime`, issue.message)
     for (const issue of courseTimeIssues(override.classes))
@@ -477,7 +496,7 @@ export function localIssues(draft: NativeProfile): ValidationIssue[] {
     if (rule.weekdays.some((day) => !Number.isInteger(day) || day < 1 || day > 7))
       add(`${path}.weekdays`, '提醒星期必须为 1～7')
     if (![0, 1, 2].includes(rule.course)) add(`${path}.course`, '提醒课程条件无效')
-    if (rule.course === 1 && !text(rule.subject)) add(`${path}.subject`, '指定科目提醒必须填写科目')
+    if (rule.course === 1) checkSubject(rule.subject, `${path}.subject`)
     if (!Number.isInteger(rule.period) || rule.period < 1 || rule.period > 999)
       add(`${path}.period`, '节次必须为 1～999')
     if (![0, 1, 2].includes(rule.timing)) add(`${path}.timing`, '提醒时机无效')
