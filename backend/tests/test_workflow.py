@@ -184,8 +184,9 @@ def test_immutable_version_and_archive(app, owner):
 
 
 def test_display_v2_publish_compatibility_and_exact_rollback(owner, client):
-    from conftest import DISPLAY
     from copy import deepcopy
+
+    from conftest import DISPLAY
 
     device_id, secret, _ = owner.pair()
     content = deepcopy(DISPLAY) | {
