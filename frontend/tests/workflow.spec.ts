@@ -217,7 +217,23 @@ async function settleTimetable(page: Page) {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
 }
 async function assertNoOverflow(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
+  // Resizing can overlap a closing teleported dropdown. Check the settled layout.
+  await expect(async () => {
+    const layout = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      viewport: window.innerWidth,
+      overflowing: Array.from(document.querySelectorAll('body *'))
+        .filter((element) => {
+          const rect = element.getBoundingClientRect()
+          return rect.width > 0 && rect.right > window.innerWidth
+        })
+        .slice(0, 12)
+        .map((element) => `${element.tagName}.${element.className}`),
+    }))
+    expect(layout.width, `横向溢出元素：${layout.overflowing.join(', ')}`).toBeLessThanOrEqual(
+      layout.viewport,
+    )
+  }).toPass({ timeout: 5000 })
 }
 
 test('new teacher registers, edits a visual timetable, connects a classroom and publishes on mobile', async ({
@@ -420,9 +436,7 @@ test('protects name edits, save failures, revision conflicts and display switche
   await page.getByPlaceholder('配置名称').fill('本地展示名称')
   await api(page, 'PATCH', `/resources/${display.id}`, { revision: display.revision, name: '远端展示名称' })
   await page.getByRole('button', { name: '保存', exact: true }).click()
-  await expect(
-    page.getByText('其他页面已修改配置，当前输入已保留。请下载备份后载入最新内容。'),
-  ).toBeVisible()
+  await expect(page.getByText('其他页面已修改配置，当前输入已保留。请下载备份后载入最新内容。')).toBeVisible()
   await expect(page.getByPlaceholder('配置名称')).toHaveValue('本地展示名称')
   await page.getByRole('button', { name: '载入最新内容', exact: true }).click()
   await page.getByRole('button', { name: '确定', exact: true }).click()
@@ -504,7 +518,7 @@ test('publishes display only, reports blocked and failed results, restores conte
   await receipt(page, device.secret, { display_config: { result: 'blocked', reason: 'plugin_conflict' } })
   await page.getByRole('button', { name: '刷新结果' }).click()
   await expect(page.getByTestId('release-summary')).toHaveText('1 间需要处理')
-  await page.getByText('查看课表与展示设置的结果', { exact: true }).click()
+  await page.getByText('查看课表与客户端配置的结果', { exact: true }).click()
   await expect(page.getByText(/请在教室设备检查插件/)).toBeVisible()
   await receipt(page, device.secret, {
     display_config: { result: 'failed', reason: 'save_failed', attempt: 2 },
@@ -916,12 +930,20 @@ test('edits desktop display sections and preserves duplicate component identitie
     animations: 'disabled',
   })
   await editorSection(page, '窗口拦截')
-  await page.locator('#manage-window-rules').click()
+  await page
+    .locator('.client-setting-row')
+    .filter({ has: page.locator('label[for="manage-window-rules"]') })
+    .locator('.el-switch')
+    .click()
   await page.getByRole('button', { name: '新增规则', exact: true }).click()
   await page.getByRole('textbox', { name: '第1条程序路径', exact: true }).fill('C:/Apps/example.exe')
   await page.getByRole('textbox', { name: '第1条窗口类名', exact: true }).fill('ExampleWindow')
   await editorSection(page, '插件')
-  await page.locator('#manage-plugin-preferences').click()
+  await page
+    .locator('.client-setting-row')
+    .filter({ has: page.locator('label[for="manage-plugin-preferences"]') })
+    .locator('.el-switch')
+    .click()
   await page.getByRole('textbox', { name: '添加插件 ID', exact: true }).fill('org.example.clock')
   await page.getByRole('button', { name: '添加插件', exact: true }).click()
   await assertNoOverflow(page)

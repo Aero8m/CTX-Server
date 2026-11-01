@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ApiError, get, patch, post } from '../api'
@@ -20,7 +20,9 @@ const selected = ref<Resource>(),
   config = ref<DisplayConfig>(defaultDisplay())
 const name = ref('新的配置'),
   baseline = ref(''),
-  saving = ref(false)
+  saving = ref(false),
+  navigating = ref(false)
+const busy = computed(() => saving.value || navigating.value)
 const error = ref(''),
   conflict = ref(false),
   section = ref('appearance')
@@ -48,17 +50,11 @@ const refresh = useRefresh(async (options) => {
   apply(route.params.id ? await get<Resource>(`/resources/${route.params.id}`, options) : undefined)
 }, 0)
 const { error: loadError, loading, ready } = refresh
-watch(
-  () => route.params.id,
-  () => {
-    void refresh()
-  },
-)
 function backup() {
   downloadJson(config.value, 'client-config.json')
 }
 async function save(publish = false) {
-  if (saving.value) return
+  if (busy.value) return
   if (!name.value.trim()) {
     error.value = '请填写配置名称'
     return
@@ -90,10 +86,17 @@ async function save(publish = false) {
     apply(result.resource)
     ElMessage.success('配置已保存，发布后教室才会收到更新')
     saving.value = false
-    if (publish)
-      await router.push(`/publish?display=${result.resource.id}&revision=${result.resource.revision}`)
-    else if (!route.params.id) await router.replace(`/display/${result.resource.id}/edit`)
+    if (publish || !route.params.id) {
+      // App keys pages by path. Keep the outgoing editor disabled until it is
+      // unmounted so input cannot be lost during the route transition.
+      navigating.value = true
+      const failure = publish
+        ? await router.push(`/publish?display=${result.resource.id}&revision=${result.resource.revision}`)
+        : await router.replace(`/display/${result.resource.id}/edit`)
+      if (failure) navigating.value = false
+    }
   } catch (reason) {
+    navigating.value = false
     conflict.value = reason instanceof ApiError && reason.code === 'revision_conflict'
     error.value = conflict.value
       ? '其他页面已修改配置，当前输入已保留。请下载备份后载入最新内容。'
@@ -146,22 +149,26 @@ async function reloadLatest() {
     <section class="panel">
       <el-form label-position="top" class="display-name-form">
         <el-form-item label="配置名称">
-          <el-input v-model="name" maxlength="100" :disabled="saving" placeholder="配置名称" />
+          <el-input v-model="name" maxlength="100" :disabled="busy" placeholder="配置名称" />
         </el-form-item>
       </el-form>
     </section>
-    <EditorLayout v-model="section" title="配置编辑" :items="items" :disabled="saving" @save="save()">
+    <EditorLayout v-model="section" title="配置编辑" :items="items" :disabled="busy" @save="save()">
       <DisplayEditor v-model="config" :section="section" />
       <ManagedSettingsEditor v-model="config" :section="section" />
       <template #footer>
         <span class="editor-state" role="status">{{
           dirty ? '未保存' : selected ? '已保存' : '尚未保存'
         }}</span>
-        <el-button :disabled="saving" @click="backup">下载当前表单</el-button>
+        <el-button :disabled="busy" @click="backup">下载当前表单</el-button>
         <span class="grow"></span>
-        <el-button :disabled="!dirty || saving" @click="discard">放弃更改</el-button>
-        <el-button :loading="saving" @click="save()">保存</el-button>
-        <el-button type="primary" :loading="saving" :disabled="!!selected?.archived" @click="save(true)"
+        <el-button :disabled="!dirty || busy" @click="discard">放弃更改</el-button>
+        <el-button :loading="saving" :disabled="navigating" @click="save()">保存</el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          :disabled="navigating || !!selected?.archived"
+          @click="save(true)"
           >保存并发布</el-button
         >
       </template>
